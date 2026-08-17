@@ -12,19 +12,16 @@
 - [x] Harness 五件套：AGENTS.md / feature_list.json / progress.md / init.sh / session-handoff.md
 - [x] 规格文档：SPEC.md（可执行验收标准）/ PLAN.md（7 阶段）/ TASKS.md（TDD 粒度任务）
 - [x] package.json + node:test 验证链（`npm test` → `node --test`，零依赖）
-- [x] TDD 示例跑通：T1.1 起点 toGray/toGrayImage（Red→Green 完整循环，2 测试通过）
+- [x] TDD 示例跑通：toGray/toGrayImage（Red→Green）
 - [x] git init + 首次提交（381a41a）
 
 ### What's In Progress
 
-- [ ] T1.1 像素数组模块（灰度已完成；裁剪/缩放/二值化待做）
-  - Details: src/shared/pixels.js 扩展
-  - Blockers: 无
+- [x] T1.1 像素数组模块完成（灰度/裁剪/缩放/全局阈值/自适应阈值，7/7 测试）
 
 ### What's Next
 
-1. T1.1 完成像素工具（裁剪/缩放/二值化，TDD）
-2. T1.2 类型识别：定位符检测
+1. T1.2 类型识别：定位符检测（检测三回字 Finder Pattern）
 3. 后续按 TASKS.md 顺序推进
 
 ## Blockers / Risks
@@ -57,4 +54,4 @@
 
 ## Notes for Next Session
 
-下一会话从 T1.1 继续：扩展 pixels.js（裁剪/缩放/二值化），严格 Red→Green。当前任务在 TASKS.md "当前任务" 节。
+下一任务 T1.2 定位符检测（TASKS.md）。pixels.js 工具已齐备。
