@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Last Updated:** 2026-08-17 15:20
+**Last Updated:** 2026-08-17 17:00
 **Active Feature:** feat-001 项目骨架与验证链
 
 ## Status
@@ -55,3 +55,8 @@
 ## Notes for Next Session
 
 下一任务 T1.2 定位符检测（TASKS.md）。pixels.js 工具已齐备。
+
+## 用户明确需求记录（2026-08-17）
+
+- **Logo 保留**：能扫是基础；原图带 logo 的码，重生后**必须保留 logo**（当前丢失，待 T5.1/T5.3）
+- **埋点保留**：原 QR 带埋点（URL 参数/tracking）时，重生码必须逐字符保留（已天然保证 + 测试加固）

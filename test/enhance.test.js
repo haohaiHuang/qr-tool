@@ -62,3 +62,11 @@ test("enhanceQr: 中心带 logo 的码（抹白后重解）", () => {
   assert.equal(res.ok, true, `带 logo 码应通过抹白重解：${res.reason ?? ""}`);
   assert.equal(res.text, text);
 });
+
+test("enhanceQr: 带埋点参数（query/tracking）的 URL 逐字符保留", () => {
+  const text = "https://example.com/page?utm_source=wechat&utm_medium=qr&ref=abc123&campaign=summer";
+  const { rgba, width, height } = buildQrImage(text, 4, 4);
+  const r = enhanceQr(rgba, width, height, 8);
+  assert.equal(r.ok, true);
+  assert.equal(r.text, text, "埋点参数必须逐字符保留（不做重写/规范化）");
+});
