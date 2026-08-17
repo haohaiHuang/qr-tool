@@ -1,6 +1,8 @@
 // Finder Pattern（QR 三回字定位符）检测 — 纯函数，node 可测
 // 标准 QR 定位符：7x7 模块，黑白比例 1:1:3:1:1（黑-白-黑-白-黑），中心黑块 3 倍宽
 
+import { binarize } from "../shared/pixels.js";
+
 /** 扫描一行灰度，返回游程列表 [{color, len}]（color: 0=黑/255=白） */
 function runLengths(row, width) {
   const runs = [];
@@ -100,17 +102,20 @@ function cluster(pts, size) {
   return centers;
 }
 
-/** 检测 QR 定位符，返回中心点列表 [{x, y}] */
-export function detectFinderPatterns(gray, width, height) {
+/** 检测 QR 定位符，返回中心点列表 [{x, y}]
+ *  先二值化（真实二维码有抗锯齿/JPEG 灰度渐变，游程分析需纯黑白）
+ *  threshold：二值化阈值（默认 128） */
+export function detectFinderPatterns(gray, width, height, threshold = 128) {
+  const bin = binarize(gray, threshold);
   const candidates = [];
   for (let y = 0; y < height; y++) {
-    const row = gray.subarray(y * width, (y + 1) * width);
+    const row = bin.subarray(y * width, (y + 1) * width);
     const runs = runLengths(row, width);
     for (let i = 0; i < runs.length - 4; i++) {
       const x = matchFinderRuns(runs, i, width);
       if (x === null) continue;
       // 垂直验证
-      const cy = verifyVertical(gray, width, height, x, y);
+      const cy = verifyVertical(bin, width, height, x, y);
       if (cy === null) continue;
       candidates.push({ x, y: cy });
     }

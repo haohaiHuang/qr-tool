@@ -57,3 +57,28 @@ test("detectFinderPatterns: 纯白图无定位符", () => {
   const gray = new Uint8ClampedArray(W * H).fill(255);
   assert.equal(detectFinderPatterns(gray, W, H).length, 0);
 });
+
+// 真实感：抗锯齿/模糊的二维码（灰度渐变）仍应检测到定位符
+test("detectFinderPatterns: 模糊（抗锯齿）图像仍能检测", () => {
+  const W = 200, H = 200;
+  const gray = new Uint8ClampedArray(W * H).fill(255);
+  drawFinder(gray, W, H, 50, 50, 4);
+  drawFinder(gray, W, H, 150, 50, 4);
+  drawFinder(gray, W, H, 50, 150, 4);
+  // 3x3 邻域平均模拟抗锯齿模糊（产生灰度渐变而非纯黑白）
+  const blurred = new Uint8ClampedArray(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let sum = 0, n = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const yy = y + dy, xx = x + dx;
+          if (yy >= 0 && yy < H && xx >= 0 && xx < W) { sum += gray[yy * W + xx]; n++; }
+        }
+      }
+      blurred[y * W + x] = sum / n;
+    }
+  }
+  const pts = detectFinderPatterns(blurred, W, H);
+  assert.equal(pts.length, 3, "模糊图应检测到 3 个定位符");
+});
