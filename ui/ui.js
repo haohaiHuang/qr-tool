@@ -9,6 +9,12 @@ import { generateMatrix } from "../src/qr/generate.js";
 const drop = document.getElementById("drop");
 const fileInput = document.getElementById("file");
 const statusEl = document.getElementById("status");
+
+// 状态提示（type 支持 "" / "ok" / "warn"）
+function status(msg, type = "") {
+  statusEl.textContent = msg;
+  statusEl.className = type;
+}
 const resultEl = document.getElementById("result");
 const srcCanvas = document.getElementById("src");
 const outCanvas = document.getElementById("out");
