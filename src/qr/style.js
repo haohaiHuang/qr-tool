@@ -1,39 +1,45 @@
 // 风格保留：从原码图检测配色，重生时还原 — 纯函数，node 可测
+// 方案：Otsu 阈值分割 → 暗像素均值 = 前景色，亮像素均值 = 背景色
+// 不依赖 jsQR location / 模块定位（对噪声/留白/拍摄差异鲁棒）
 
-import { generateMatrix } from "./generate.js";
-import { decodeResult } from "./decode.js";
+import { toGrayImage } from "../shared/pixels.js";
 
-const QUIET = 4; // generateMatrix 的 quiet zone（矩阵含 quiet，定位时跳过）
+/** Otsu 全局阈值（256 级灰度），返回阈值 t（0-255） */
+export function otsuThreshold(gray) {
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+  const total = gray.length;
+  let sumAll = 0;
+  for (let i = 0; i < 256; i++) sumAll += i * hist[i];
+  let sumB = 0, wB = 0, maxVar = -1, best = 128;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t];
+    if (wB === 0) continue;
+    const wF = total - wB;
+    if (wF === 0) break;
+    sumB += t * hist[t];
+    const mB = sumB / wB;
+    const mF = (sumAll - sumB) / wF;
+    const between = wB * wF * (mB - mF) * (mB - mF);
+    if (between > maxVar) { maxVar = between; best = t; }
+  }
+  return best;
+}
 
 /**
  * 从原图检测前景/背景色（增强而非替换：保留品牌色）
- * 用 jsQR 的 location 精确定位模块网格（不依赖 quiet zone 宽度假设）
  * 返回 { fg: [r,g,b], bg: [r,g,b] }
  */
 export function detectStyle(rgba, width, height) {
-  const result = decodeResult(rgba, width, height);
-  if (!result) return { fg: [0, 0, 0], bg: [255, 255, 255] };
-
-  const { size, matrix } = generateMatrix(result.data); // size = n + 2*QUIET
-  const n = size - QUIET * 2; // 数据模块数
-  const loc = result.location;
-  const x0 = loc.topLeftCorner.x;
-  const y0 = loc.topLeftCorner.y;
-  const gridW = loc.topRightCorner.x - x0;
-  const modulePx = gridW / n; // 每模块像素（浮点）
-
+  const gray = toGrayImage(rgba, width, height);
+  const t = otsuThreshold(gray);
   let fgSum = [0, 0, 0], fgCount = 0;
   let bgSum = [0, 0, 0], bgCount = 0;
-  // 遍历数据模块（矩阵含 quiet，偏移 QUIET）
-  for (let r = 0; r < n; r++) {
-    for (let c = 0; c < n; c++) {
-      const cx = x0 + (c + 0.5) * modulePx;
-      const cy = y0 + (r + 0.5) * modulePx;
-      const px = Math.round(cx);
-      const py = Math.round(cy);
-      if (px < 0 || px >= width || py < 0 || py >= height) continue;
-      const i = (py * width + px) * 4;
-      if (matrix[r + QUIET][c + QUIET]) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const g = gray[y * width + x];
+      const i = (y * width + x) * 4;
+      if (g <= t) { // 暗 → 前景
         fgSum[0] += rgba[i]; fgSum[1] += rgba[i + 1]; fgSum[2] += rgba[i + 2]; fgCount++;
       } else {
         bgSum[0] += rgba[i]; bgSum[1] += rgba[i + 1]; bgSum[2] += rgba[i + 2]; bgCount++;
