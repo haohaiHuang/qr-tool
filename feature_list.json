@@ -1,0 +1,60 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "项目骨架与验证链",
+      "description": "Harness 文件、package.json、npm test 骨架跑通，TDD 流程可用",
+      "dependencies": [],
+      "status": "in-progress",
+      "evidence": "npm test 有真实测试通过"
+    },
+    {
+      "id": "feat-002",
+      "name": "核心基础设施",
+      "description": "像素数组工具 + 类型识别路由（T1.1-T1.4，SPEC F1/F2 前置）",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-003",
+      "name": "标准码解码重生",
+      "description": "解码→重生→风格保留→闭环自检（SPEC F3，P0）",
+      "dependencies": ["feat-002"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-004",
+      "name": "微信码视觉重绘",
+      "description": "环检测→坑位检测→矢量重绘（SPEC F4，P0）",
+      "dependencies": ["feat-002"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "UI HTML MVP",
+      "description": "单 HTML：上传→识别→预览对比→下载（SPEC F1/F2/F7，P0 收口）",
+      "dependencies": ["feat-003", "feat-004"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-006",
+      "name": "Logo 码处理",
+      "description": "Logo 检测抠取 + 纠错余量检查 + 叠加（SPEC F5，P1）",
+      "dependencies": ["feat-003"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-007",
+      "name": "微信码结构重建",
+      "description": "网格固定性验证 + 自洽测试通过后开放（SPEC F6，P2）",
+      "dependencies": ["feat-004"],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}

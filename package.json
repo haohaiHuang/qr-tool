@@ -1,0 +1,12 @@
+{
+  "name": "qr-tool",
+  "version": "0.1.0",
+  "description": "QR code vector enhancement tool (single HTML, testable core)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.6"
+  }
+}
