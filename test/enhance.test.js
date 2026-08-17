@@ -33,3 +33,11 @@ test("enhanceQr: 彩色码重生后保留风格且可解码", () => {
   // 完整可解码验证（管道内已自检，这里确认输出尺寸正确）
   assert.equal(r.width, r.height);
 });
+
+test("enhanceQr: quiet zone 非 4（如截图裁剪/留白不同）仍自检通过", () => {
+  const text = "WIDE QUIET";
+  const { rgba, width, height } = buildQrImage(text, 4, 8); // quiet zone = 8 模块（非假设的 4）
+  const r = enhanceQr(rgba, width, height, 8);
+  assert.equal(r.ok, true, `应自检通过：${r.reason ?? ""}`);
+  assert.equal(r.text, text);
+});
