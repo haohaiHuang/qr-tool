@@ -2,50 +2,59 @@
 
 ## Current State
 
-**Last Updated:** YYYY-MM-DD HH:MM
-**Session ID:** [optional]
-**Active Feature:** [feat-XXX - Feature Name]
+**Last Updated:** 2026-08-17 15:20
+**Active Feature:** feat-001 项目骨架与验证链
 
 ## Status
 
 ### What's Done
 
-- [x] [Completed item 1]
-- [x] [Completed item 2]
+- [x] Harness 五件套：AGENTS.md / feature_list.json / progress.md / init.sh / session-handoff.md
+- [x] 规格文档：SPEC.md（可执行验收标准）/ PLAN.md（7 阶段）/ TASKS.md（TDD 粒度任务）
+- [x] package.json + node:test 验证链（`npm test` → `node --test`，零依赖）
+- [x] TDD 示例跑通：T1.1 起点 toGray/toGrayImage（Red→Green 完整循环，2 测试通过）
+- [x] git init + 首次提交（381a41a）
 
 ### What's In Progress
 
-- [ ] [Current work item]
-  - Details: [specific task]
-  - Blockers: [if any]
+- [ ] T1.1 像素数组模块（灰度已完成；裁剪/缩放/二值化待做）
+  - Details: src/shared/pixels.js 扩展
+  - Blockers: 无
 
 ### What's Next
 
-1. [Next action item]
-2. [Following action item]
+1. T1.1 完成像素工具（裁剪/缩放/二值化，TDD）
+2. T1.2 类型识别：定位符检测
+3. 后续按 TASKS.md 顺序推进
 
 ## Blockers / Risks
 
-- [ ] [Blocker 1]: [description, impact]
-- [ ] [Risk 1]: [description, mitigation]
+- [ ] 微信码结构重建（F6）依赖真实样本验证——需要用户提供小程序码截图
+- [ ] jsQR/qrcode-generator 的引入方式待定（npm 依赖 vs CDN + UI 层注入）
 
 ## Decisions Made
 
-- **[Decision 1]**: [description]
-  - Context: [why this decision was made]
-  - Alternatives considered: [what else was discussed]
+- **[核心算法纯像素数组]**：src/ 不依赖 DOM/Canvas，保证 node 可单测
+  - Context: TDD 前提；UI 是薄层负责文件→像素→渲染
+- **[node:test 零依赖]**：node 24 内置测试框架，避免测试框架本身成为依赖
+- **[MVP 不引 OpenCV.js]**：几何算法纯 JS 实现，控制复杂度
+- **[项目位置]**：~/Desktop/Pi/qr-tool，pi 默认工作目录 ~/Desktop/Pi
 
 ## Files Modified This Session
 
-- `path/to/file1.ts` - [brief description of change]
-- `path/to/file2.ts` - [brief description of change]
+- `AGENTS.md` - 定制（TDD 工作流 + Spec/Plan/Task + 技术栈约束）
+- `SPEC.md` / `PLAN.md` / `TASKS.md` - 规格/计划/任务
+- `feature_list.json` / `progress.md` / `init.sh` / `session-handoff.md` - harness
+- `package.json` - 测试脚本
+- `src/shared/pixels.js` - 灰度转换（TDD 示例）
+- `test/pixels.test.js` - 对应测试
 
 ## Evidence of Completion
 
-- [ ] Tests pass: `[command and output]`
-- [ ] Type check clean: `[command and output]`
-- [ ] Manual verification: `[what was tested]`
+- [x] Tests pass: `npm test` → 2 pass, 0 fail
+- [x] Type check: N/A（纯 JS）
+- [x] Manual verification: 无（骨架阶段）
 
 ## Notes for Next Session
 
-[Free-form notes that will help the next session pick up context]
+下一会话从 T1.1 继续：扩展 pixels.js（裁剪/缩放/二值化），严格 Red→Green。当前任务在 TASKS.md "当前任务" 节。
