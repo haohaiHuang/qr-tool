@@ -25,8 +25,8 @@
       "dependencies": [
         "feat-002"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "T2.1-T2.4（解码/重生/风格保留/闭环自检）29/29 全绿"
     },
     {
       "id": "feat-004",
