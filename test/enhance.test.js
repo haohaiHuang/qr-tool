@@ -41,3 +41,24 @@ test("enhanceQr: quiet zone 非 4（如截图裁剪/留白不同）仍自检通�
   assert.equal(r.ok, true, `应自检通过：${r.reason ?? ""}`);
   assert.equal(r.text, text);
 });
+
+// Logo 码：中心被 logo 覆盖 → 抹白重解（纠错恢复）
+test("enhanceQr: 中心带 logo 的码（抹白后重解）", () => {
+  const text = "LOGO QR TEST";
+  const { rgba, width, height } = buildQrImage(text, 4, 4);
+  // 在码中心画一个"logo"圆（半径 ~8% 码宽，真实 logo 比例），覆盖中心模块
+  const cx = Math.floor(width / 2), cy = Math.floor(height / 2);
+  const r = Math.floor(width * 0.08); // 真实 logo 大小（~16% 直径）
+  for (let y = cy - r; y <= cy + r; y++) {
+    for (let x = cx - r; x <= cx + r; x++) {
+      if (Math.hypot(x - cx, y - cy) <= r) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 255; rgba[i + 1] = 255; rgba[i + 2] = 255; // 白（覆盖 logo 数据）
+      }
+    }
+  }
+  // 直接解码应失败（logo 覆盖）
+  const res = enhanceQr(rgba, width, height, 8);
+  assert.equal(res.ok, true, `带 logo 码应通过抹白重解：${res.reason ?? ""}`);
+  assert.equal(res.text, text);
+});
