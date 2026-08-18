@@ -10,6 +10,7 @@ import { detectSharpness, needsRebuild } from "../src/quality.js";
 // 模块加载完成标记（诊断用：看到"就绪"说明 ui.js 执行成功）
 const drop = document.getElementById("drop");
 const fileInput = document.getElementById("file");
+const switchBtn = document.getElementById("switch-mode");
 const statusEl = document.getElementById("status");
 
 // Lucide 图标（SVG 内联，design-references 素材库首选）
@@ -69,6 +70,7 @@ async function handleFile(file) {
         // 重建失败 → 像素放大兜底（不报错，但非无损）
         const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
         current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
+        if (switchBtn) { switchBtn.disabled = true; switchBtn.textContent = "原图放大"; }
         showPreview(imgData.data, canvas.width, canvas.height, current);
         status(`${ICON.alert} 结构重绘失败，已用高清放大兜底（保留原样，非矢量无损）：${canvas.width}px → ${big.width}px`, "warn");
         return;
@@ -76,6 +78,7 @@ async function handleFile(file) {
       // 保存重绘结果 + 放大版（供切换），默认重绘
       const enlarged = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix, alt: { rgba: enlarged.rgba, width: enlarged.width, height: enlarged.height }, mode: "redraw" };
+      if (switchBtn) { switchBtn.disabled = false; switchBtn.textContent = "原图放大"; }
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "增强重绘（模块矢量，高清无损）" : "重编码（兜底）";
       status(`${ICON.check} ${engine}：${canvas.width}px → ${r.width}px · 自检通过 · 可切换「原图放大」`);
@@ -84,6 +87,7 @@ async function handleFile(file) {
       status("微信码高清放大中…");
       const r = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
       current = { rgba: r.rgba, width: r.width, height: r.height, text: "微信小程序码", isWechat: true, origData: imgData.data, origW: canvas.width, origH: canvas.height };
+      if (switchBtn) { switchBtn.disabled = true; switchBtn.textContent = "原图放大"; }
       showPreview(imgData.data, canvas.width, canvas.height, current);
       status(`${ICON.check} 微信码高清放大：${canvas.width}px → ${r.width}px（保留原样，扫码成功率不保证）`);
     } else {
@@ -117,7 +121,6 @@ if (switchHint) {
     if (bubble) bubble.style.display = "none";
   });
 }
-const switchBtn = document.getElementById("switch-mode");
 if (switchBtn) {
   switchBtn.addEventListener("click", () => {
     if (!current || !current.alt) return;
