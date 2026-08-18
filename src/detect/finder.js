@@ -19,7 +19,7 @@ function runLengths(row, width) {
   return runs;
 }
 
-/** 判断 5 段是否近似 1:1:3:1:1（黑白黑白黑），返回中心 x 位置或 null */
+/** 判断 5 段是否近似 1:1:3:1:1（黑白黑白黑），返回 { x: 中心x, modulePx: 每模块像素 } 或 null */
 function matchFinderRuns(runs, i, width) {
   const r0 = runs[i], r1 = runs[i + 1], r2 = runs[i + 2], r3 = runs[i + 3], r4 = runs[i + 4];
   if (!r4) return null;
@@ -37,7 +37,7 @@ function matchFinderRuns(runs, i, width) {
   let x = 0;
   for (let k = 0; k <= i + 2; k++) x += runs[k].len;
   x -= runs[i + 2].len / 2;
-  return Math.round(x);
+  return { x: Math.round(x), modulePx: (r0.len + r4.len) / 2 };
 }
 
 /** 垂直验证：从 (x, cy) 向上定位完整 1:1:3:1:1 模式起点，再数 5 段验证，返回中心 y 或 null */
@@ -93,6 +93,7 @@ function cluster(pts, size) {
       if (Math.abs(c.x - p.x) < size && Math.abs(c.y - p.y) < size) {
         c.x = Math.round((c.x + p.x) / 2);
         c.y = Math.round((c.y + p.y) / 2);
+        c.modulePx = c.modulePx ? (c.modulePx + (p.modulePx || c.modulePx)) / 2 : p.modulePx;
         merged = true;
         break;
       }
@@ -112,12 +113,12 @@ export function detectFinderPatterns(gray, width, height, threshold = 128) {
     const row = bin.subarray(y * width, (y + 1) * width);
     const runs = runLengths(row, width);
     for (let i = 0; i < runs.length - 4; i++) {
-      const x = matchFinderRuns(runs, i, width);
-      if (x === null) continue;
+      const m = matchFinderRuns(runs, i, width);
+      if (m === null) continue;
       // 垂直验证
-      const cy = verifyVertical(bin, width, height, x, y);
+      const cy = verifyVertical(bin, width, height, m.x, y);
       if (cy === null) continue;
-      candidates.push({ x, y: cy });
+      candidates.push({ x: m.x, y: cy, modulePx: m.modulePx });
     }
   }
   // 估计 Finder 尺寸（第一段黑长作为模块尺寸的近似，用于聚类阈值）

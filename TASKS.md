@@ -11,13 +11,9 @@
 
 ## 阶段 3：方案 B 结构重绘引擎
 
-### T3.1 网格定位（src/detect/grid.js）— ⬜
-从 3 Finder 建立网格映射，对齐图案校正（version≥2）
-- [ ] Red: TC-G1（合成码网格误差 ≤0.5 模块）
-- [ ] Red: TC-G2（quiet=8/12）
-- [ ] Red: TC-G3（模糊/JPEG 码误差 ≤1 模块）
-- [ ] Red: TC-G4（纯白图 → null）
-- [ ] Green 实现 + Refactor
+### T3.1 网格定位（src/detect/grid.js）— ✅
+从 3 Finder 建立仿射映射（修：行列坐标写反 + toPixel 变量遮蔽）；TC-G1~G4 全过（37/37）
+- [x] TC-G1/G2/G3/G4
 
 ### T3.2 模块采样（src/detect/sampler.js）— ⬜
 每模块中心区域多数投票 → 原模块矩阵
@@ -64,4 +60,4 @@ B 优先 → 失败回退 A；含自检 + 引擎标记
 
 ## 当前任务
 
-**T3.1 网格定位**（方案 B 第一块，最难，先攻）
+**T3.2 模块采样**（sampler.js，TC-S1~S3）
