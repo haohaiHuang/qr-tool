@@ -71,8 +71,8 @@ async function handleFile(file) {
       const enlarged = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix, alt: { rgba: enlarged.rgba, width: enlarged.width, height: enlarged.height }, mode: "redraw" };
       showPreview(imgData.data, canvas.width, canvas.height, current);
-      const engine = r.engine === "B" ? "结构重绘（模块矢量，高清无损）" : "重编码（兜底）";
-      status(`✅ ${engine}：${canvas.width}px → ${r.width}px · 自检通过 · 可切换「原样放大」`);
+      const engine = r.engine === "B" ? "增强重绘（模块矢量，高清无损）" : "重编码（兜底）";
+      status(`✅ ${engine}：${canvas.width}px → ${r.width}px · 自检通过 · 可切换「原图放大」`);
     } else if (route.type === "wechat") {
       // 微信圆形码：高清放大（保留原样/色彩/创意结构）
       status("微信码高清放大中…");
@@ -101,7 +101,7 @@ function showPreview(srcData, w, h, result) {
 const switchHint = document.getElementById("switch-hint");
 if (switchHint) {
   switchHint.addEventListener("click", () => {
-    status("如增强编码放大有误，可点击切换为普通放大模式", "warn");
+    status("如增强重绘效果不理想，可点击「原图放大」切换为像素保真模式", "warn");
   });
 }
 const switchBtn = document.getElementById("switch-mode");
@@ -112,8 +112,8 @@ if (switchBtn) {
     const data = current.mode === "redraw" ? current : current.alt;
     outCanvas.width = data.width; outCanvas.height = data.height;
     outCanvas.getContext("2d").putImageData(new ImageData(data.rgba, data.width, data.height), 0, 0);
-    switchBtn.textContent = current.mode === "redraw" ? "切换：原样放大" : "切换：结构重绘";
-    status(current.mode === "redraw" ? "当前：结构重绘（模块矢量，高清无损）" : "当前：原样放大（像素保真）");
+    switchBtn.textContent = current.mode === "redraw" ? "原图放大" : "增强重绘";
+    status(current.mode === "redraw" ? "当前：增强重绘（模块矢量，高清无损）" : "当前：原图放大（像素保真）");
   });
 }
 
