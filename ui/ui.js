@@ -2,7 +2,7 @@
 
 import { toGrayImage } from "../src/shared/pixels.js";
 import { classifyCode } from "../src/detect/route.js";
-import { enhanceQr } from "../src/qr/enhance.js";
+import { enhance2 } from "../src/qr/enhance2.js";
 import { generateMatrix } from "../src/qr/generate.js";
 
 // 模块加载完成标记（诊断用：看到"就绪"说明 ui.js 执行成功）
@@ -54,14 +54,15 @@ async function handleFile(file) {
     const route = classifyCode(gray, canvas.width, canvas.height);
 
     if (route.type === "qr") {
-      const r = enhanceQr(imgData.data, canvas.width, canvas.height, 8);
+      const r = enhance2(imgData.data, canvas.width, canvas.height, 8);
       if (!r.ok) {
-        status(`标准码处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`);
+        status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
         return;
       }
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text };
       showPreview(imgData.data, canvas.width, canvas.height, current);
-      status(`✅ 标准码增强完成：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过`);
+      const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
+      status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过`);
     } else if (route.type === "wechat") {
       status("检测到微信小程序码：建议在微信开发者后台用 API 重新生成（官方 1280px）。视觉重绘功能开发中。", "warn");
     } else {
