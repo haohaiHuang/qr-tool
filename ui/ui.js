@@ -5,6 +5,7 @@ import { classifyCode } from "../src/detect/route.js";
 import { enhance2 } from "../src/qr/enhance2.js";
 import { buildSvg } from "../src/svg.js";
 import { enlarge } from "../src/wechat.js";
+import { detectSharpness, needsRebuild } from "../src/quality.js";
 
 // 模块加载完成标记（诊断用：看到"就绪"说明 ui.js 执行成功）
 const drop = document.getElementById("drop");
@@ -55,12 +56,20 @@ async function handleFile(file) {
     const route = classifyCode(gray, canvas.width, canvas.height);
 
     if (route.type === "qr") {
-      // 直接生成高清（预览 = 下载的缩小版，所见即所得）
-      // 适中分辨率：logo 从原图放大约 3 倍保持清晰（过大倍率 logo 会糊，受原图限制）
       const target = 1184;
+      const sharpness = detectSharpness(imgData.data, canvas.width, canvas.height);
+      if (!needsRebuild(imgData.data, canvas.width, canvas.height, sharpness)) {
+        // 原图清晰 → 像素级保真（高清放大，保留原样，不做无谓重建）
+        const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+        current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
+        showPreview(imgData.data, canvas.width, canvas.height, current);
+        status(`✅ 原图清晰，直接高清放大（保留原样）：${canvas.width}px → ${big.width}px`);
+        return;
+      }
+      // 原图模糊 → 语义级重建（结构重绘，锐化）
       const r = enhance2(imgData.data, canvas.width, canvas.height, Math.round(target / 37));
       if (!r.ok) {
-        // 重建失败 → 像素级保真兜底（高清放大，不报错）
+        // 重建失败 → 保真兜底（不报错）
         const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
         current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
         showPreview(imgData.data, canvas.width, canvas.height, current);
