@@ -46,8 +46,8 @@
         "feat-003",
         "feat-004"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "UI 接入 B 引擎（预览=下载 1184px，logo/间隙/配色保留，SVG 矢量下载）；用户确认完美"
     },
     {
       "id": "feat-006",
