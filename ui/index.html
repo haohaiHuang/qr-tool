@@ -30,8 +30,9 @@ body {
   line-height: 1.6; text-rendering: optimizeLegibility;
 }
 main { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-h1 { font-size: 1.5rem; font-weight: 780; letter-spacing: -0.03em; }
-p.sub { color: var(--muted); font-size: .9rem; margin-top: .2rem; }
+h1 { margin: 0; font-size: clamp(32px, 4.5vw, 48px); font-weight: 780; line-height: 1.04; letter-spacing: -0.055em; }
+p.eyebrow { margin: 0 0 .5rem; color: var(--accent); font-size: 13px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+p.sub { color: var(--muted); font-size: clamp(15px, 1.6vw, 18px); margin-top: .6rem; line-height: 1.75; }
 
 #drop {
   margin-top: 1.5rem; padding: 3rem 1.5rem; border: 2px dashed var(--line);
@@ -74,6 +75,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
       数据本地处理
     </div>
   </header>
+  <p class="eyebrow">QR Code Enhancer</p>
+  <h1>QR 码增强工具</h1>
   <p class="sub">低分辨率码 → 高清 PNG / SVG（标准码结构重绘 · 风格保留 · 闭环自检）</p>
 
   <div id="drop">
