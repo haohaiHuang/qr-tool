@@ -48,19 +48,26 @@ export function enhance2(rgba, width, height, modulePx = 8) {
       const original = { rgba, width, height, cx: bounds.cx, cy: bounds.cy, srcHalf, logoRatio };
       const r2 = tryRedraw(matrix, grid, style, rgba, width, height, modulePx, original);
       if (r2.ok) {
-        return { ok: true, engine: "B", text: r2.origText, rgba: r2.out.rgba, width: r2.out.width, height: r2.out.height, matrix };
+        return {
+          ok: true, engine: "B", text: r2.origText, rgba: r2.out.rgba, width: r2.out.width, height: r2.out.height, matrix,
+          style, n: grid.n, modulePx,
+          logo: { rgba, width, height, cx: bounds.cx, cy: bounds.cy, srcHalf, logoRatio },
+        };
       }
     }
 
     // ② 无 logo 重绘自检（标准码/误判兜底）
     const r1 = tryRedraw(matrix, grid, style, rgba, width, height, modulePx, null);
     if (r1.ok) {
-      return { ok: true, engine: "B", text: r1.origText, rgba: r1.out.rgba, width: r1.out.width, height: r1.out.height, matrix };
+      return {
+        ok: true, engine: "B", text: r1.origText, rgba: r1.out.rgba, width: r1.out.width, height: r1.out.height, matrix,
+        style, n: grid.n, modulePx, logo: null,
+      };
     }
     // B 全失败 → 落 A
   }
 
   const r = enhanceQr(rgba, width, height, modulePx);
-  if (r.ok) return { ...r, engine: "A" };
+  if (r.ok) return { ...r, engine: "A", style: null, logo: null };
   return { ok: false, reason: r.reason };
 }

@@ -3,7 +3,7 @@
 import { toGrayImage } from "../src/shared/pixels.js";
 import { classifyCode } from "../src/detect/route.js";
 import { enhance2 } from "../src/qr/enhance2.js";
-import { generateMatrix } from "../src/qr/generate.js";
+import { buildSvg } from "../src/svg.js";
 
 // 模块加载完成标记（诊断用：看到"就绪"说明 ui.js 执行成功）
 const drop = document.getElementById("drop");
@@ -62,7 +62,7 @@ async function handleFile(file) {
         status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
         return;
       }
-      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text };
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
       status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
@@ -109,8 +109,8 @@ statusEl.textContent = "✓ 就绪：拖拽或点击选择二维码图片";
 
 document.getElementById("dl-svg").addEventListener("click", () => {
   if (!current) return;
-  const { size, matrix } = generateMatrix(current.text);
-  const svg = buildSvg(matrix, size, 10);
+  const logoDataUrl = current.logo && current.logo.srcHalf > 0 ? cropLogoPng(current.logo) : null;
+  const svg = buildSvg(current.matrix, current.n, current.style, logoDataUrl, current.logo ? current.logo.logoRatio : 0);
   const blob = new Blob([svg], { type: "image/svg+xml" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -118,19 +118,32 @@ document.getElementById("dl-svg").addEventListener("click", () => {
   a.click();
 });
 
-function buildSvg(matrix, size, modulePx = 10) {
-  const total = size * modulePx;
-  const rects = [];
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      if (matrix[r][c]) {
-        rects.push(`<rect x="${c * modulePx}" y="${r * modulePx}" width="${modulePx}" height="${modulePx}"/>`);
-      }
+// 裁原图 logo 圆形区域 → PNG dataURL（SVG 嵌入）
+function cropLogoPng(logo) {
+  const { rgba, width, height, cx, cy, srcHalf } = logo;
+  const r = Math.max(1, Math.round(srcHalf));
+  const size = r * 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const imgData = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const sx = Math.round(cx - r + x);
+      const sy = Math.round(cy - r + y);
+      const dst = (y * size + x) * 4;
+      if (sx < 0 || sx >= width || sy < 0 || sy >= height) continue;
+      const d = Math.hypot(x - r, y - r);
+      if (d > r) continue; // 圆形 mask 外透明
+      const src = (sy * width + sx) * 4;
+      imgData.data[dst] = rgba[src];
+      imgData.data[dst + 1] = rgba[src + 1];
+      imgData.data[dst + 2] = rgba[src + 2];
+      imgData.data[dst + 3] = 255;
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="${total}" viewBox="0 0 ${total} ${total}">` +
-    `<rect width="${total}" height="${total}" fill="#ffffff"/>` +
-    `<g fill="#000000">${rects.join("")}</g></svg>`;
+  ctx.putImageData(imgData, 0, 0);
+  return canvas.toDataURL("image/png");
 }
 
 // 自动化测试钩子：?autotest=1 时自动处理内置测试图（headless 验证用）
