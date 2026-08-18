@@ -118,7 +118,7 @@ document.getElementById("dl-svg").addEventListener("click", () => {
   a.click();
 });
 
-// 裁原图 logo 圆形区域 → PNG dataURL（SVG 嵌入）
+// 裁原图 logo 方形区域 → PNG dataURL（SVG 嵌入，保持原 logo 形状）
 function cropLogoPng(logo) {
   const { rgba, width, height, cx, cy, srcHalf } = logo;
   const r = Math.max(1, Math.round(srcHalf));
@@ -133,8 +133,6 @@ function cropLogoPng(logo) {
       const sy = Math.round(cy - r + y);
       const dst = (y * size + x) * 4;
       if (sx < 0 || sx >= width || sy < 0 || sy >= height) continue;
-      const d = Math.hypot(x - r, y - r);
-      if (d > r) continue; // 圆形 mask 外透明
       const src = (sy * width + sx) * 4;
       imgData.data[dst] = rgba[src];
       imgData.data[dst + 1] = rgba[src + 1];
