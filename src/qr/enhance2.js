@@ -42,9 +42,9 @@ export function enhance2(rgba, width, height, modulePx = 8) {
 
     if (bounds) {
       // 检测到 logo → 贴片重绘 + 自检（保留 logo；自检失败再试无 logo 版）
-      const ringW = grid.modulePx * 1.5; // 白环外扩（覆盖完整白环，贴片边缘落白环内避免黑底描边）
-      const logoRatio = (bounds.halfW * 2 + ringW * 2) / (grid.modulePx * grid.n);
-      const srcHalf = (bounds.halfW + bounds.halfH) / 2 + ringW;
+      // 贴片只覆盖黑底（白环由重绘纯白模块形成，避免原图低质白放大出"半透明"感）
+      const srcHalf = (bounds.halfW + bounds.halfH) / 2;
+      const logoRatio = (srcHalf * 2) / (grid.modulePx * grid.n);
       const original = { rgba, width, height, cx: bounds.cx, cy: bounds.cy, srcHalf, logoRatio };
       const r2 = tryRedraw(matrix, grid, style, rgba, width, height, modulePx, original);
       if (r2.ok) {
