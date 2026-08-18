@@ -55,7 +55,8 @@ async function handleFile(file) {
 
     if (route.type === "qr") {
       // 直接生成高清（预览 = 下载的缩小版，所见即所得）
-      const target = 4000;
+      // 适中分辨率：logo 从原图放大约 3 倍保持清晰（过大倍率 logo 会糊，受原图限制）
+      const target = 1184;
       const r = enhance2(imgData.data, canvas.width, canvas.height, Math.round(target / 37));
       if (!r.ok) {
         status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
@@ -94,7 +95,7 @@ document.getElementById("dl-png").addEventListener("click", () => {
   canvas.toBlob((blob) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "qr-enhanced-4000px.png";
+    a.download = "qr-enhanced.png";
     a.click();
     status("✅ 已下载（与预览一致）");
   }, "image/png");
