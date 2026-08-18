@@ -60,7 +60,11 @@ async function handleFile(file) {
       const target = 1184;
       const r = enhance2(imgData.data, canvas.width, canvas.height, Math.round(target / 37));
       if (!r.ok) {
-        status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
+        // 重建失败 → 像素级保真兜底（高清放大，不报错）
+        const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+        current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
+        showPreview(imgData.data, canvas.width, canvas.height, current);
+        status(`⚠️ 结构重绘失败，已用高清放大兜底（保留原样）：${canvas.width}px → ${big.width}px`, "warn");
         return;
       }
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix };
