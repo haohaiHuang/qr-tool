@@ -9,6 +9,7 @@ const MODULE_SIZES = Array.from({ length: 40 }, (_, v) => 17 + 4 * (v + 1));
 /** 从候选 Finder 点中挑选构成直角三角的三点（左上/右上/左下）
  *  直角点 = 到另外两点距离之和最小的点；最长边为斜边 */
 function pickRightTriangle(pts) {
+  let best = null, bestScore = Infinity;
   for (let i = 0; i < pts.length; i++) {
     for (let j = 0; j < pts.length; j++) {
       if (j === i) continue;
@@ -18,20 +19,22 @@ function pickRightTriangle(pts) {
         const dAB = Math.hypot(b.x - a.x, b.y - a.y);
         const dAC = Math.hypot(c.x - a.x, c.y - a.y);
         const dBC = Math.hypot(c.x - b.x, c.y - b.y);
-        // 直角点 = 两条短边的公共点（勾股近似）
-        const eps = Math.max(dAB, dAC, dBC) * 0.15;
+        // a 为直角点：AB、AC 为直角边，BC 为斜边
         if (Math.abs(dAB * dAB + dAC * dAC - dBC * dBC) < dBC * dBC * 0.1) {
-          // a 是直角点，b/c 是斜边两端 → b 右上、c 左下（按位置排序）
-          // 确定左右：b/c 中 x 较大为右上
-          const [tr, bl] = dBC > 0 && dAB >= dAC
-            ? (b.x > c.x ? [b, c] : [c, b])  // 斜边 = BC，a 直角
-            : null;
-          if (tr) return { tl: a, tr, bl };
+          // 正方形码特征：两直角边长度接近（真 finder 三角一致；误报三角边长差异大）
+          const score = Math.abs(dAB - dAC) / Math.max(dAB, dAC);
+          if (score < bestScore) {
+            bestScore = score;
+            // b 右上、c 左下（x 大者为右上）
+            const tr = b.x > c.x ? b : c;
+            const bl = b.x > c.x ? c : b;
+            best = { tl: a, tr, bl };
+          }
         }
       }
     }
   }
-  return null;
+  return best;
 }
 
 /**

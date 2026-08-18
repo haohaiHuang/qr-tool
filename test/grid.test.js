@@ -94,3 +94,13 @@ test("TC-G6: 间隙圆角模块检测出 fill<1", () => {
   assert.ok(style.moduleFill < 0.95, `间隙码 fill 应<1，实际 ${style.moduleFill}`);
   assert.ok(style.moduleRadius > 0, `间隙码应有圆角，实际 ${style.moduleRadius}`);
 });
+
+// TC-G7: 高版本码（77 模块）网格定位——finder 误报时选对真三角
+test("TC-G7: 高版本码（77 模块）网格定位", () => {
+  const longText = "HIGHV" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".repeat(8);
+  const { rgba, width, height } = buildQrImage(longText, 4, QUIET);
+  const gray = toGrayImage(rgba, width, height);
+  const grid = detectGrid(gray, width, height);
+  assert.ok(grid, "应定位到网格");
+  assert.ok(grid.n >= 65, `高版本码 n 应大（69+），实际 ${grid.n}`);
+});
