@@ -59,7 +59,7 @@ async function handleFile(file) {
         status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
         return;
       }
-      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text };
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, origData: imgData.data, origW: canvas.width, origH: canvas.height };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
       status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过`);
@@ -83,23 +83,27 @@ function showPreview(srcData, w, h, result) {
 }
 
 // ---------- 导出 ----------
-document.getElementById("dl-png").addEventListener("click", () => {
+document.getElementById("dl-png").addEventListener("click", async () => {
   if (!current) return;
-  // 输出到 4000px（等比）
-  const scale = 4000 / Math.max(current.width, current.height);
-  const w = Math.round(current.width * scale);
-  const h = Math.round(current.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(outCanvas, 0, 0, w, h);
-  canvas.toBlob((blob) => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "qr-enhanced.png";
-    a.click();
-  }, "image/png");
+  status("生成 4000px 高清版…");
+  try {
+    // 直接重新处理生成高清（跳过预览图的放大损失，logo 从原图直接采样）
+    const n = Math.round(current.width / 8); // 模块数（当前输出 = n*8）
+    const big = enhance2(current.origData, current.origW, current.origH, Math.round(4000 / n));
+    if (!big.ok) { status("高清生成失败：" + big.reason, "warn"); return; }
+    const canvas = document.createElement("canvas");
+    canvas.width = big.width; canvas.height = big.height;
+    canvas.getContext("2d").putImageData(new ImageData(big.rgba, big.width, big.height), 0, 0);
+    canvas.toBlob((blob) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "qr-enhanced-4000px.png";
+      a.click();
+      status("✅ 已下载 4000px 高清版");
+    }, "image/png");
+  } catch (e) {
+    status("下载失败：" + e.message, "warn");
+  }
 });
 
 // 调试接口（供自动化测试）

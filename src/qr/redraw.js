@@ -10,6 +10,24 @@ function inRoundedRect(x, y, cx, cy, half, radius) {
   return ex * ex + ey * ey <= radius * radius;
 }
 
+/** 双线性采样（放大贴片时平滑） */
+function sampleBilinear(rgba, w, h, sx, sy) {
+  const x0 = Math.min(w - 1, Math.max(0, Math.floor(sx)));
+  const y0 = Math.min(h - 1, Math.max(0, Math.floor(sy)));
+  const x1 = Math.min(w - 1, x0 + 1);
+  const y1 = Math.min(h - 1, y0 + 1);
+  const fx = sx - x0, fy = sy - y0;
+  const out = [];
+  for (let ch = 0; ch < 3; ch++) {
+    const v00 = rgba[(y0 * w + x0) * 4 + ch];
+    const v10 = rgba[(y0 * w + x1) * 4 + ch];
+    const v01 = rgba[(y1 * w + x0) * 4 + ch];
+    const v11 = rgba[(y1 * w + x1) * 4 + ch];
+    out[ch] = Math.round(v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy);
+  }
+  return out;
+}
+
 /** 区域平均采样（对缩小贴片抗混叠；输出像素覆盖原图 [sx0,sx1]×[sy0,sy1] 区域取平均） */
 function sampleArea(rgba, w, h, sx0, sy0, sx1, sy1) {
   const x0 = Math.min(w - 1, Math.max(0, Math.floor(sx0)));
@@ -89,7 +107,10 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
         const srcStep = srcHalf / logoHalf;
         const sx = cx + (dx / logoHalf) * srcHalf;
         const sy = cy + (dy / logoHalf) * srcHalf;
-        const [r, g, b] = sampleArea(orig, ow, oh, sx, sy, sx + srcStep, sy + srcStep);
+        // 缩小（srcStep>=1）区域平均抗混叠；放大（<1）双线性平滑
+        const [r, g, b] = srcStep >= 1
+          ? sampleArea(orig, ow, oh, sx, sy, sx + srcStep, sy + srcStep)
+          : sampleBilinear(orig, ow, oh, sx, sy);
         const oy = Math.floor(logoCy) + dy;
         const ox = Math.floor(logoCx) + dx;
         const di = (oy * px + ox) * 4;
