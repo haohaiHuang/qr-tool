@@ -28,7 +28,7 @@ function pickRightTriangle(pts) {
             // b 右上、c 左下（x 大者为右上）
             const tr = b.x > c.x ? b : c;
             const bl = b.x > c.x ? c : b;
-            best = { tl: a, tr, bl };
+            best = { tl: a, tr, bl, score: bestScore };
           }
         }
       }
