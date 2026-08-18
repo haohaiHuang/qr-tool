@@ -98,6 +98,12 @@ function showPreview(srcData, w, h, result) {
 }
 
 // ---------- 导出 ----------
+const switchHint = document.getElementById("switch-hint");
+if (switchHint) {
+  switchHint.addEventListener("click", () => {
+    status("如增强编码放大有误，可点击切换为普通放大模式", "warn");
+  });
+}
 const switchBtn = document.getElementById("switch-mode");
 if (switchBtn) {
   switchBtn.addEventListener("click", () => {
