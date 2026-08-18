@@ -12,9 +12,15 @@ const drop = document.getElementById("drop");
 const fileInput = document.getElementById("file");
 const statusEl = document.getElementById("status");
 
-// 状态提示（type 支持 "" / "ok" / "warn"）
+// Lucide 图标（SVG 内联，design-references 素材库首选）
+const ICON = {
+  check: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.15em"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  alert: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.15em"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+};
+
+// 状态提示（type 支持 "" / "ok" / "warn"）；支持 ${ICON.xxx} 内嵌图标
 function status(msg, type = "") {
-  statusEl.textContent = msg;
+  statusEl.innerHTML = msg;
   statusEl.className = type;
 }
 const resultEl = document.getElementById("result");
@@ -64,7 +70,7 @@ async function handleFile(file) {
         const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
         current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
         showPreview(imgData.data, canvas.width, canvas.height, current);
-        status(`⚠️ 结构重绘失败，已用高清放大兜底（保留原样，非矢量无损）：${canvas.width}px → ${big.width}px`, "warn");
+        status(`${ICON.alert} 结构重绘失败，已用高清放大兜底（保留原样，非矢量无损）：${canvas.width}px → ${big.width}px`, "warn");
         return;
       }
       // 保存重绘结果 + 放大版（供切换），默认重绘
@@ -72,14 +78,14 @@ async function handleFile(file) {
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix, alt: { rgba: enlarged.rgba, width: enlarged.width, height: enlarged.height }, mode: "redraw" };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "增强重绘（模块矢量，高清无损）" : "重编码（兜底）";
-      status(`✅ ${engine}：${canvas.width}px → ${r.width}px · 自检通过 · 可切换「原图放大」`);
+      status(`${ICON.check} ${engine}：${canvas.width}px → ${r.width}px · 自检通过 · 可切换「原图放大」`);
     } else if (route.type === "wechat") {
       // 微信圆形码：高清放大（保留原样/色彩/创意结构）
       status("微信码高清放大中…");
       const r = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
       current = { rgba: r.rgba, width: r.width, height: r.height, text: "微信小程序码", isWechat: true, origData: imgData.data, origW: canvas.width, origH: canvas.height };
       showPreview(imgData.data, canvas.width, canvas.height, current);
-      status(`✅ 微信码高清放大：${canvas.width}px → ${r.width}px（保留原样，扫码成功率不保证）`);
+      status(`${ICON.check} 微信码高清放大：${canvas.width}px → ${r.width}px（保留原样，扫码成功率不保证）`);
     } else {
       status("无法识别的码类型：请上传标准二维码或微信小程序码截图。", "warn");
     }
@@ -135,7 +141,7 @@ document.getElementById("dl-png").addEventListener("click", () => {
     a.href = URL.createObjectURL(blob);
     a.download = "qr-enhanced.png";
     a.click();
-    status("✅ 已下载（与预览一致）");
+    status(`${ICON.check} 已下载（与预览一致）`);
   }, "image/png");
 });
 
