@@ -71,7 +71,7 @@ async function handleFile(file) {
       // 微信圆形码：高清放大（保留原样/色彩/创意结构）
       status("微信码高清放大中…");
       const r = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
-      current = { rgba: r.rgba, width: r.width, height: r.height, text: "微信小程序码", isWechat: true };
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: "微信小程序码", isWechat: true, origData: imgData.data, origW: canvas.width, origH: canvas.height };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       status(`✅ 微信码高清放大：${canvas.width}px → ${r.width}px（保留原样，扫码成功率不保证）`);
     } else {
@@ -115,7 +115,21 @@ statusEl.textContent = "✓ 就绪：拖拽或点击选择二维码图片";
 
 document.getElementById("dl-svg").addEventListener("click", () => {
   if (!current) return;
-  if (current.isWechat) { status("微信码为原样放大，无矢量 SVG（可下载高清 PNG）", "warn"); return; }
+  if (current.isWechat) {
+    // 微信码 SVG：内嵌原图（矢量包装，按需缩放显示）
+    const c = document.createElement("canvas");
+    c.width = current.origW; c.height = current.origH;
+    c.getContext("2d").putImageData(new ImageData(current.origData, current.origW, current.origH), 0, 0);
+    const dataUrl = c.toDataURL("image/png");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${current.width}" height="${current.height}" viewBox="0 0 ${current.origW} ${current.origH}">` +
+      `<rect width="100%" height="100%" fill="#ffffff"/><image width="100%" height="100%" href="${dataUrl}"/></svg>`;
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "wechat-code.svg";
+    a.click();
+    return;
+  }
   const logoDataUrl = current.logo && current.logo.srcHalf > 0 ? cropLogoPng(current.logo) : null;
   const svg = buildSvg(current.matrix, current.n, current.style, logoDataUrl, current.logo ? current.logo.logoRatio : 0);
   const blob = new Blob([svg], { type: "image/svg+xml" });

@@ -2,20 +2,33 @@
 // 微信码是彩色创意码（中心品牌区/绿角标/自由放射线段），重绘不做结构重建，
 // 用高质量插值放大（视觉=原图，清晰度提升）。扫码成功率不保证（诚实标注）。
 
-/** 双线性采样 */
-function sampleBilinear(rgba, w, h, sx, sy) {
-  const x0 = Math.min(w - 1, Math.max(0, Math.floor(sx)));
-  const y0 = Math.min(h - 1, Math.max(0, Math.floor(sy)));
-  const x1 = Math.min(w - 1, x0 + 1);
-  const y1 = Math.min(h - 1, y0 + 1);
-  const fx = sx - x0, fy = sy - y0;
+/** Catmull-Rom 三次插值（比双线性锐利） */
+function cubic(v0, v1, v2, v3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * (
+    2 * v1 + (-v0 + v2) * t + (2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 + (-v0 + 3 * v1 - 3 * v2 + v3) * t3
+  );
+}
+
+function sampleCatmull(rgba, w, h, sx, sy) {
+  const x = Math.min(w - 1, Math.max(0, sx));
+  const y = Math.min(h - 1, Math.max(0, sy));
+  const x0 = Math.floor(x), y0 = Math.floor(y);
+  const fx = x - x0, fy = y - y0;
   const out = [];
   for (let ch = 0; ch < 4; ch++) {
-    const v00 = rgba[(y0 * w + x0) * 4 + ch];
-    const v10 = rgba[(y0 * w + x1) * 4 + ch];
-    const v01 = rgba[(y1 * w + x0) * 4 + ch];
-    const v11 = rgba[(y1 * w + x1) * 4 + ch];
-    out[ch] = Math.round(v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy);
+    // 4x4 邻域
+    const col = [];
+    for (let j = -1; j <= 2; j++) {
+      const yy = Math.min(h - 1, Math.max(0, y0 + j));
+      const v = [];
+      for (let i = -1; i <= 2; i++) {
+        const xx = Math.min(w - 1, Math.max(0, x0 + i));
+        v.push(rgba[(yy * w + xx) * 4 + ch]);
+      }
+      col.push(cubic(v[0], v[1], v[2], v[3], fx));
+    }
+    out[ch] = Math.round(cubic(col[0], col[1], col[2], col[3], fy));
   }
   return out;
 }
@@ -37,7 +50,7 @@ export function enlarge(rgba, width, height, scale = 3, targetWidth = null) {
       // 格子中心映射（避免整数采样错过细线）
       const sx = (x + 0.5) * width / outW;
       const sy = (y + 0.5) * height / outH;
-      const [r, g, b, a] = sampleBilinear(rgba, width, height, sx, sy);
+      const [r, g, b, a] = sampleCatmull(rgba, width, height, sx, sy);
       const i = (y * outW + x) * 4;
       out[i] = r; out[i + 1] = g; out[i + 2] = b; out[i + 3] = a;
     }
