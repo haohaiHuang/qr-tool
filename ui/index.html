@@ -70,7 +70,9 @@ button:hover { opacity: .9; }
       <button id="dl-png" class="primary">下载 PNG</button>
       <button id="dl-svg">下载 SVG（矢量）</button>
       <div style="margin-left:auto; display:flex; align-items:center; gap:.5rem">
-        <span id="switch-hint" style="cursor:pointer; font-size:1rem" title="点击查看提示">⚠️</span>
+        <span id="switch-hint" style="cursor:pointer; position:relative; font-size:1rem; line-height:1">⚠️
+          <span id="switch-hint-bubble" style="display:none; position:absolute; bottom:130%; right:0; background:#333; color:#fff; padding:.6rem .8rem; border-radius:6px; font-size:.78rem; width:230px; z-index:20; box-shadow:0 2px 8px rgba(0,0,0,.2)">如增强重绘效果不理想，可点击「原图放大」切换为像素保真模式</span>
+        </span>
         <button id="switch-mode">原图放大</button>
       </div>
       <p class="sub" style="margin-top:.6rem">输出为基于当前原图的最高可用分辨率；如需更清晰，请提供更高清的原图（如微信后台 1280px 官方码）。</p>

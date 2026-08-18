@@ -100,8 +100,15 @@ function showPreview(srcData, w, h, result) {
 // ---------- 导出 ----------
 const switchHint = document.getElementById("switch-hint");
 if (switchHint) {
-  switchHint.addEventListener("click", () => {
-    status("如增强重绘效果不理想，可点击「原图放大」切换为像素保真模式", "warn");
+  switchHint.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const bubble = document.getElementById("switch-hint-bubble");
+    if (bubble) bubble.style.display = bubble.style.display === "none" ? "block" : "none";
+  });
+  // 点击其他区域关闭气泡
+  document.addEventListener("click", () => {
+    const bubble = document.getElementById("switch-hint-bubble");
+    if (bubble) bubble.style.display = "none";
   });
 }
 const switchBtn = document.getElementById("switch-mode");
