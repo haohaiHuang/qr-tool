@@ -41,7 +41,7 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
   const half = (modulePx * moduleFill) / 2;
   const radius = modulePx * moduleRadius;
 
-  // logo 区域：输出中心方形（不假设圆形；原图中心方形区域原样贴，保持 logo 形态与周边空白）
+  // logo 区域：输出中心方形（黑底 + 白环外扩；内部全贴保持 icon/白环）
   const logoHalf = original ? px * (original.logoRatio || 0.22) / 2 : 0;
   const logoCx = px / 2, logoCy = px / 2;
   const inLogo = (x, y) => Math.abs(x - logoCx) <= logoHalf && Math.abs(y - logoCy) <= logoHalf;
@@ -72,20 +72,20 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
     }
   }
 
-  // 2) 贴原图 logo 区域（方形，双线性 + 边缘羽化避免"点状围边"硬切）
+  // 2) 贴原图 logo 区域（方形 = 黑底+白环，内部全贴保持 icon/白环；边缘羽化）
   if (original) {
     const { rgba: orig, width: ow, height: oh, cx, cy, srcHalf } = original;
-    const fade = Math.max(2, Math.round(px * 0.012)); // 羽化宽度（输出 ~3px）
+    const fade = Math.max(2, Math.round(px * 0.01)); // 羽化宽度
     for (let dy = -Math.floor(logoHalf); dy <= Math.floor(logoHalf); dy++) {
       for (let dx = -Math.floor(logoHalf); dx <= Math.floor(logoHalf); dx++) {
-        // 边缘羽化 alpha：距边界 fade 内从 255 → 0
+        // 方形边缘羽化
         const dEdge = Math.max(
           Math.abs(dx) - (logoHalf - fade),
           Math.abs(dy) - (logoHalf - fade),
         );
         let alpha = 255;
         if (dEdge > 0) alpha = Math.max(0, Math.round(255 * (1 - dEdge / fade)));
-        // 原图源步长（输出 1px = 原图 srcStep px；缩小 >1 时区域平均抗混叠）
+        // 原图源步长（缩小 >1 时区域平均抗混叠）
         const srcStep = srcHalf / logoHalf;
         const sx = cx + (dx / logoHalf) * srcHalf;
         const sy = cy + (dy / logoHalf) * srcHalf;
@@ -96,7 +96,6 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
         if (alpha >= 255) {
           rgba[di] = r; rgba[di + 1] = g; rgba[di + 2] = b; rgba[di + 3] = 255;
         } else if (alpha > 0) {
-          // 与已画内容混合（羽化过渡）
           const t = alpha / 255;
           rgba[di] = Math.round(r * t + rgba[di] * (1 - t));
           rgba[di + 1] = Math.round(g * t + rgba[di + 1] * (1 - t));

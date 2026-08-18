@@ -112,3 +112,84 @@ export function detectModuleStyle(gray, width, height, grid, threshold = 128) {
   return { moduleRadius: hasGap ? 0.15 : 0, moduleFill: hasGap ? moduleFill : 1 };
 }
 
+
+/**
+ * 检测原图 logo 边界（白环法）：微信码类 logo = 深色主体 + 一圈白留白环（两侧深色）
+ * 从码中心沿中心行/列向外，找第一个"宽白段（0.5-2 模块）且两侧深色" = 白环
+ * logo 区域 = 中心到白环内缘
+ * @returns { cx, cy, halfW, halfH }（原图坐标）| null
+ */
+
+/**
+ * 检测原图 logo 边界（白环法）：微信码类 logo = 深色主体 + 一圈白留白环（两侧深色）
+ * 从码中心沿中心行/列向外找第一个"宽白段（0.5-2 模块）且两侧深色" = 白环
+ * @returns { cx, cy, halfW, halfH }（原图坐标）| null
+ */
+
+/**
+ * 检测原图 logo 边界（区域生长法）：logo 深色主体 = 中心附近的深色连通块
+ * 白留白环天然阻挡生长（不穿过白），外接矩形 = logo 边界
+ * @returns { cx, cy, halfW, halfH }（原图坐标）| null
+ */
+
+/**
+ * 检测原图 logo 边界（颜色相似 + 距离限制生长）
+ * 种子 = 中心附近深色像素；生长条件 = 与基准色差 < tol 且距种子 < maxDist
+ * （白环/不同色阻挡；远处模块因距离/色差不并入 → 不外溢）
+ * @returns { cx, cy, halfW, halfH, mask }（原图坐标；mask = logo 像素集合）| null
+ */
+
+/**
+ * 检测原图 logo 边界（颜色相似 + 距离限制生长 + 白占比校验）
+ * 种子 = 中心附近深色像素；生长 = 与基准色差 < tol 且距种子 < maxDist
+ * 校验：外接矩形内白占比 ∈ [0.05, 0.6]（真 logo 黑底含白气泡；纯黑模块组白≈0）
+ * @returns { cx, cy, halfW, halfH, mask }（mask = logo 深色像素集合）| null
+ */
+export function detectLogoBounds(gray, width, height, grid, colorTol = 60) {
+  const { n, modulePx, toPixel } = grid;
+  const [cx, cy] = toPixel((n - 1) / 2, (n - 1) / 2);
+  const cxi = Math.round(cx), cyi = Math.round(cy);
+  if (cxi < 0 || cxi >= width || cyi < 0 || cyi >= height) return null;
+
+  let seed = null;
+  const maxR = Math.max(width, height);
+  for (let r = 0; r < maxR && !seed; r++) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+      const x = cxi + dx * r, y = cyi + dy * r;
+      if (x >= 0 && x < width && y >= 0 && y < height && gray[y * width + x] < 128) {
+        seed = [x, y];
+        break;
+      }
+    }
+  }
+  if (!seed) return null;
+  const baseColor = gray[seed[1] * width + seed[0]];
+  const maxDist = modulePx * n * 0.25;
+
+  const queue = [seed];
+  const visited = new Set([seed[1] * width + seed[0]]);
+  let minX = seed[0], maxX = seed[0], minY = seed[1], maxY = seed[1];
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      const key = ny * width + nx;
+      if (nx < 0 || nx >= width || ny < 0 || ny >= height || visited.has(key)) continue;
+      if (Math.abs(gray[key] - baseColor) > colorTol) continue;
+      if (Math.hypot(nx - seed[0], ny - seed[1]) > maxDist) continue;
+      visited.add(key);
+      queue.push([nx, ny]);
+    }
+  }
+
+  const w2 = maxX - minX, h2 = maxY - minY;
+  if (w2 < modulePx || h2 < modulePx) return null;
+
+  return {
+    cx: (minX + maxX) / 2, cy: (minY + maxY) / 2,
+    halfW: w2 / 2, halfH: h2 / 2,
+    mask: visited,
+  };
+}
