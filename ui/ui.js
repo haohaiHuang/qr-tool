@@ -62,7 +62,7 @@ async function handleFile(file) {
         status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
         return;
       }
-      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo };
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
       status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
@@ -151,5 +151,17 @@ if (new URLSearchParams(location.search).has("autotest")) {
   fetch("/ui/test-qr.png")
     .then((r) => r.arrayBuffer())
     .then((buf) => handleFile(new File([buf], "test-qr.png", { type: "image/png" })))
+    .then(() => {
+      setTimeout(() => {
+        try {
+          const hasLogo = !!(current && current.logo);
+          const logoDataUrl = hasLogo ? cropLogoPng(current.logo) : null;
+          const svg = buildSvg(current.matrix, current.n, current.style, logoDataUrl, current.logo ? current.logo.logoRatio : 0);
+          status(`AUTOTEST: engine=${current.style ? "B" : "?"} logo=${hasLogo} dataUrl=${!!logoDataUrl} svgLen=${svg.length} svgImg=${svg.includes("<image")}`);
+        } catch (e) {
+          status("AUTOTEST 错误: " + e.message);
+        }
+      }, 3000);
+    })
     .catch((e) => status("autotest 失败: " + e.message, "warn"));
 }
