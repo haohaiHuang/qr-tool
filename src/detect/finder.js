@@ -84,23 +84,29 @@ function verifyVertical(gray, width, height, x, cy) {
   return Math.round(start + r0.len + r1.len + r2.len / 2);
 }
 
-/** 候选点聚类（贪心）：与已有簇中心距离 < size 则并入 */
+/** 候选点聚类：距离 < size 并入同一簇，最终取**中位数**（抗离群，finder 中心更准） */
 function cluster(pts, size) {
-  const centers = [];
+  const clusters = [];
   for (const p of pts) {
     let merged = false;
-    for (const c of centers) {
+    for (const c of clusters) {
       if (Math.abs(c.x - p.x) < size && Math.abs(c.y - p.y) < size) {
-        c.x = Math.round((c.x + p.x) / 2);
-        c.y = Math.round((c.y + p.y) / 2);
-        c.modulePx = c.modulePx ? (c.modulePx + (p.modulePx || c.modulePx)) / 2 : p.modulePx;
+        c.list.push(p);
         merged = true;
         break;
       }
     }
-    if (!merged) centers.push({ x: p.x, y: p.y });
+    if (!merged) clusters.push({ x: p.x, y: p.y, list: [p] });
   }
-  return centers;
+  const median = (arr) => {
+    const s = [...arr].sort((a, b) => a - b);
+    return s[Math.floor(s.length / 2)];
+  };
+  return clusters.map((c) => ({
+    x: Math.round(median(c.list.map((p) => p.x))),
+    y: Math.round(median(c.list.map((p) => p.y))),
+    modulePx: median(c.list.map((p) => p.modulePx || 4)),
+  }));
 }
 
 /** 检测 QR 定位符，返回中心点列表 [{x, y}]

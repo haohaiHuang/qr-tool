@@ -15,21 +15,21 @@
 从 3 Finder 建立仿射映射（修：行列坐标写反 + toPixel 变量遮蔽）；TC-G1~G4 全过（37/37）
 - [x] TC-G1/G2/G3/G4
 
-### T3.2 模块采样（src/detect/sampler.js）— ⬜
+### T3.2 模块采样（src/detect/sampler.js）— ✅ TC-S1~S3
 每模块中心区域多数投票 → 原模块矩阵
 - [ ] Red: TC-S1（合成码一致率 100%）
 - [ ] Red: TC-S2（模糊码 ≥95%）
 - [ ] Red: TC-S3（真实图 IMG6150 采样 → 重绘可扫码 = 原内容）
 - [ ] Green + Refactor
 
-### T3.3 高清重绘（src/qr/redraw.js）— ⬜
+### T3.3 高清重绘（src/qr/redraw.js）— ✅ TC-R1~R3（配色+logo叠加）
 原矩阵矢量重绘 + Otsu 配色 + logo 中心原样叠加
 - [ ] Red: TC-R1（重绘扫码 = 原内容）
 - [ ] Red: TC-R2（彩色码配色保留 ±30）
 - [ ] Red: TC-R3（logo 保留：中心区域非全白/全黑）
 - [ ] Green + Refactor
 
-### T3.4 管道集成（src/qr/enhance2.js）— ⬜
+### T3.4 管道集成（src/qr/enhance2.js）— ✅ TC-E1~E4（B优先/A回退/自检）
 B 优先 → 失败回退 A；含自检 + 引擎标记
 - [ ] Red: TC-E1（标准码 B 成功：矩阵一致率 ≥95% + 扫码一致）
 - [ ] Red: TC-E2（带 logo 码 B 成功 + logo 保留）
@@ -37,7 +37,7 @@ B 优先 → 失败回退 A；含自检 + 引擎标记
 - [ ] Red: TC-E4（白图 → 明确失败）
 - [ ] Green + Refactor
 
-### T3.5 可行性闸门 — ⬜
+### T3.5 可行性闸门 — ✅ 真实微信码 B引擎+扫码一致+logo保留（vision 确认）
 - [ ] 真实图 IMG6150 采样重绘端到端可扫码（TC-S3/E1 用真实素材）
 - [ ] 记录 Gate 结论（通过 → 阶段 4；不通过 → 定位精度策略调整）
 
@@ -60,4 +60,4 @@ B 优先 → 失败回退 A；含自检 + 引擎标记
 
 ## 当前任务
 
-**T3.2 模块采样**（sampler.js，TC-S1~S3）
+**阶段 3 完成。下一任务：T4.1 UI 接入 B 引擎**（对比预览 + 引擎标记 + logo 保留提示）

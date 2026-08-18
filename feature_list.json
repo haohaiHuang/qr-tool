@@ -76,8 +76,8 @@
       "dependencies": [
         "feat-002"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "T3.1-T3.5 完成：网格定位/采样/重绘(含logo)/管道+回退；真实微信码闸门通过（B引擎、扫码一致、logo保留）"
     }
   ]
 }
