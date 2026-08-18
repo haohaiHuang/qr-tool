@@ -21,7 +21,7 @@
     {
       "id": "feat-003",
       "name": "标准码解码重生",
-      "description": "解码→重生→风格保留→闭环自检（SPEC F3，P0）",
+      "description": "重编码引擎 A（解码→重生→自检）——已降级为方案 B 的兜底",
       "dependencies": [
         "feat-002"
       ],
@@ -65,6 +65,16 @@
       "description": "网格固定性验证 + 自洽测试通过后开放（SPEC F6，P2）",
       "dependencies": [
         "feat-004"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-008",
+      "name": "方案 B 结构重绘引擎（主方案）",
+      "description": "定位原模块网格→采样→高清重绘（保留排列/配色/logo），失败回退 A；SPEC v3",
+      "dependencies": [
+        "feat-002"
       ],
       "status": "not-started",
       "evidence": ""
