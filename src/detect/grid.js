@@ -145,27 +145,71 @@ export function detectModuleStyle(gray, width, height, grid, threshold = 128) {
  * 校验：外接矩形内白占比 ∈ [0.05, 0.6]（真 logo 黑底含白气泡；纯黑模块组白≈0）
  * @returns { cx, cy, halfW, halfH, mask }（mask = logo 深色像素集合）| null
  */
-export function detectLogoBounds(gray, width, height, grid, colorTol = 60) {
+
+/**
+ * 检测原图 logo 边界（白环规则性）：微信码类 logo = 深色主体 + 四周规则白环
+ * 从中心沿中心行/列向外，测 4 方向第一个白段宽度；4 方向均有且宽度接近（CV<0.5）→ 白环 → logo
+ * 边界 = 中心到白段内缘（黑底外缘）
+ * @returns { cx, cy, halfW, halfH }（原图坐标）| null
+ */
+
+/**
+ * 检测原图 logo 边界：① 白环规则性（4 方向白段宽度接近）② 区域生长 fallback（深色大块）
+ * @returns { cx, cy, halfW, halfH }（原图坐标）| null
+ */
+export function detectLogoBounds(gray, width, height, grid) {
   const { n, modulePx, toPixel } = grid;
   const [cx, cy] = toPixel((n - 1) / 2, (n - 1) / 2);
   const cxi = Math.round(cx), cyi = Math.round(cy);
   if (cxi < 0 || cxi >= width || cyi < 0 || cyi >= height) return null;
+  const at = (x, y) => gray[y * width + x];
 
+  // ① 白环：4 方向第一个白段，宽度接近（CV<0.5）
+  const findWhite = (start, dir, axis) => {
+    const len = axis === "x" ? width : height;
+    let p = start;
+    while (p > 0 && p < len - 1) {
+      if (at(axis === "x" ? p : cxi, axis === "x" ? cyi : p) > 200) {
+        let e = p;
+        while (e + dir >= 0 && e + dir < len && at(axis === "x" ? e + dir : cxi, axis === "x" ? cyi : e + dir) > 200) e += dir;
+        const from = Math.min(p, e), to = Math.max(p, e);
+        const w = to - from + 1;
+        if (w >= modulePx * 0.4 && w <= modulePx * 3) {
+          return { inner: dir > 0 ? from : to, width: w };
+        }
+        p = dir > 0 ? to + 1 : from - 1;
+      } else {
+        p += dir;
+      }
+    }
+    return null;
+  };
+  const l = findWhite(cxi, -1, "x"), r = findWhite(cxi, 1, "x");
+  const t = findWhite(cyi, -1, "y"), b = findWhite(cyi, 1, "y");
+  if (l && r && t && b) {
+    const widths = [l.width, r.width, t.width, b.width];
+    const mean = widths.reduce((a, x) => a + x, 0) / 4;
+    const variance = widths.reduce((a, x) => a + (x - mean) ** 2, 0) / 4;
+    if (mean > 0 && Math.sqrt(variance) / mean < 0.5) {
+      return {
+        cx: (l.inner + r.inner) / 2, cy: (t.inner + b.inner) / 2,
+        halfW: Math.abs(r.inner - l.inner) / 2, halfH: Math.abs(b.inner - t.inner) / 2,
+      };
+    }
+  }
+
+  // ② 区域生长 fallback：中心深色大块（无白环 logo，如纯色圆）
   let seed = null;
   const maxR = Math.max(width, height);
-  for (let r = 0; r < maxR && !seed; r++) {
+  for (let rr = 0; rr < maxR && !seed; rr++) {
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
-      const x = cxi + dx * r, y = cyi + dy * r;
-      if (x >= 0 && x < width && y >= 0 && y < height && gray[y * width + x] < 128) {
-        seed = [x, y];
-        break;
-      }
+      const x = cxi + dx * rr, y = cyi + dy * rr;
+      if (x >= 0 && x < width && y >= 0 && y < height && gray[y * width + x] < 128) { seed = [x, y]; break; }
     }
   }
   if (!seed) return null;
   const baseColor = gray[seed[1] * width + seed[0]];
   const maxDist = modulePx * n * 0.25;
-
   const queue = [seed];
   const visited = new Set([seed[1] * width + seed[0]]);
   let minX = seed[0], maxX = seed[0], minY = seed[1], maxY = seed[1];
@@ -177,19 +221,13 @@ export function detectLogoBounds(gray, width, height, grid, colorTol = 60) {
       const nx = x + dx, ny = y + dy;
       const key = ny * width + nx;
       if (nx < 0 || nx >= width || ny < 0 || ny >= height || visited.has(key)) continue;
-      if (Math.abs(gray[key] - baseColor) > colorTol) continue;
+      if (Math.abs(gray[key] - baseColor) > 60) continue;
       if (Math.hypot(nx - seed[0], ny - seed[1]) > maxDist) continue;
       visited.add(key);
       queue.push([nx, ny]);
     }
   }
-
   const w2 = maxX - minX, h2 = maxY - minY;
   if (w2 < modulePx || h2 < modulePx) return null;
-
-  return {
-    cx: (minX + maxX) / 2, cy: (minY + maxY) / 2,
-    halfW: w2 / 2, halfH: h2 / 2,
-    mask: visited,
-  };
+  return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, halfW: w2 / 2, halfH: h2 / 2 };
 }

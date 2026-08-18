@@ -75,7 +75,7 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
   // 2) 贴原图 logo 区域（方形 = 黑底+白环，内部全贴保持 icon/白环；边缘羽化）
   if (original) {
     const { rgba: orig, width: ow, height: oh, cx, cy, srcHalf } = original;
-    const fade = Math.max(2, Math.round(px * 0.01)); // 羽化宽度
+    const fade = 0; // 硬切（羽化会产生边缘混合黑线）
     for (let dy = -Math.floor(logoHalf); dy <= Math.floor(logoHalf); dy++) {
       for (let dx = -Math.floor(logoHalf); dx <= Math.floor(logoHalf); dx++) {
         // 方形边缘羽化
