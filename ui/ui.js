@@ -54,15 +54,17 @@ async function handleFile(file) {
     const route = classifyCode(gray, canvas.width, canvas.height);
 
     if (route.type === "qr") {
-      const r = enhance2(imgData.data, canvas.width, canvas.height, 8);
+      // 直接生成高清（预览 = 下载的缩小版，所见即所得）
+      const target = 4000;
+      const r = enhance2(imgData.data, canvas.width, canvas.height, Math.round(target / 37));
       if (!r.ok) {
         status(`处理失败：${r.reason === "decode-failed" ? "无法解码（图片太模糊或不是二维码）" : "自检未通过"}`, "warn");
         return;
       }
-      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, origData: imgData.data, origW: canvas.width, origH: canvas.height };
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
-      status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过`);
+      status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
     } else if (route.type === "wechat") {
       status("检测到微信小程序码：建议在微信开发者后台用 API 重新生成（官方 1280px）。视觉重绘功能开发中。", "warn");
     } else {
@@ -83,27 +85,19 @@ function showPreview(srcData, w, h, result) {
 }
 
 // ---------- 导出 ----------
-document.getElementById("dl-png").addEventListener("click", async () => {
+document.getElementById("dl-png").addEventListener("click", () => {
   if (!current) return;
-  status("生成 4000px 高清版…");
-  try {
-    // 直接重新处理生成高清（跳过预览图的放大损失，logo 从原图直接采样）
-    const n = Math.round(current.width / 8); // 模块数（当前输出 = n*8）
-    const big = enhance2(current.origData, current.origW, current.origH, Math.round(4000 / n));
-    if (!big.ok) { status("高清生成失败：" + big.reason, "warn"); return; }
-    const canvas = document.createElement("canvas");
-    canvas.width = big.width; canvas.height = big.height;
-    canvas.getContext("2d").putImageData(new ImageData(big.rgba, big.width, big.height), 0, 0);
-    canvas.toBlob((blob) => {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "qr-enhanced-4000px.png";
-      a.click();
-      status("✅ 已下载 4000px 高清版");
-    }, "image/png");
-  } catch (e) {
-    status("下载失败：" + e.message, "warn");
-  }
+  // 直接用当前高清结果（与预览完全一致）
+  const canvas = document.createElement("canvas");
+  canvas.width = current.width; canvas.height = current.height;
+  canvas.getContext("2d").putImageData(new ImageData(current.rgba, current.width, current.height), 0, 0);
+  canvas.toBlob((blob) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "qr-enhanced-4000px.png";
+    a.click();
+    status("✅ 已下载（与预览一致）");
+  }, "image/png");
 });
 
 // 调试接口（供自动化测试）
