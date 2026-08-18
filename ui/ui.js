@@ -4,7 +4,7 @@ import { toGrayImage } from "../src/shared/pixels.js";
 import { classifyCode } from "../src/detect/route.js";
 import { enhance2 } from "../src/qr/enhance2.js";
 import { buildSvg } from "../src/svg.js";
-import { enlarge } from "../src/wechat.js";
+import { enlarge, enlargeSharp } from "../src/wechat.js";
 import { detectSharpness, needsRebuild } from "../src/quality.js";
 
 // 模块加载完成标记（诊断用：看到"就绪"说明 ui.js 执行成功）
@@ -68,7 +68,7 @@ async function handleFile(file) {
       const r = enhance2(imgData.data, canvas.width, canvas.height, Math.round(target / 37));
       if (!r.ok) {
         // 重建失败 → 像素放大兜底（不报错，但非无损）
-        const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+        const big = enlargeSharp(imgData.data, canvas.width, canvas.height, 1184);
         current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
         if (switchBtn) { switchBtn.disabled = true; switchBtn.textContent = "原图放大"; }
         showPreview(imgData.data, canvas.width, canvas.height, current);
@@ -76,7 +76,7 @@ async function handleFile(file) {
         return;
       }
       // 保存重绘结果 + 放大版（供切换），默认重绘
-      const enlarged = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+      const enlarged = enlargeSharp(imgData.data, canvas.width, canvas.height, 1184);
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix, alt: { rgba: enlarged.rgba, width: enlarged.width, height: enlarged.height }, mode: "redraw" };
       if (switchBtn) { switchBtn.disabled = false; switchBtn.textContent = "原图放大"; }
       showPreview(imgData.data, canvas.width, canvas.height, current);
@@ -85,7 +85,7 @@ async function handleFile(file) {
     } else if (route.type === "wechat") {
       // 微信圆形码：高清放大（保留原样/色彩/创意结构）
       status("微信码高清放大中…");
-      const r = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+      const r = enlargeSharp(imgData.data, canvas.width, canvas.height, 1184);
       current = { rgba: r.rgba, width: r.width, height: r.height, text: "微信小程序码", isWechat: true, origData: imgData.data, origW: canvas.width, origH: canvas.height };
       if (switchBtn) { switchBtn.disabled = true; switchBtn.textContent = "原图放大"; }
       showPreview(imgData.data, canvas.width, canvas.height, current);

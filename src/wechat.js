@@ -88,3 +88,57 @@ export function detectWechatCircle(rgba, width, height) {
   }
   return { cx, cy, outerRadius: maxR };
 }
+
+/** 3x3 高斯模糊（unsharp 用） */
+function blur3x3(rgba, width, height) {
+  const out = new Uint8ClampedArray(rgba.length);
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      for (let ch = 0; ch < 4; ch++) {
+        let sum = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            sum += rgba[((y + dy) * width + (x + dx)) * 4 + ch];
+          }
+        }
+        out[(y * width + x) * 4 + ch] = Math.round(sum / 9);
+      }
+    }
+  }
+  // 边缘复制
+  for (let x = 0; x < width; x++) {
+    for (let ch = 0; ch < 4; ch++) {
+      out[x * 4 + ch] = rgba[x * 4 + ch];
+      out[((height - 1) * width + x) * 4 + ch] = rgba[((height - 1) * width + x) * 4 + ch];
+    }
+  }
+  for (let y = 0; y < height; y++) {
+    for (let ch = 0; ch < 4; ch++) {
+      out[(y * width) * 4 + ch] = rgba[(y * width) * 4 + ch];
+      out[(y * width + width - 1) * 4 + ch] = rgba[(y * width + width - 1) * 4 + ch];
+    }
+  }
+  return out;
+}
+
+/**
+ * Unsharp mask 锐化（放大后增强边缘）
+ * @param amount 锐化强度（0-1；过大产生光晕）
+ */
+export function sharpen(rgba, width, height, amount = 0.6) {
+  const blur = blur3x3(rgba, width, height);
+  const out = new Uint8ClampedArray(rgba.length);
+  for (let i = 0; i < rgba.length; i++) {
+    const v = rgba[i] + amount * (rgba[i] - blur[i]);
+    out[i] = Math.max(0, Math.min(255, Math.round(v)));
+  }
+  return { rgba: out, width, height };
+}
+
+/**
+ * 放大 + 锐化（微信码/兜底高清输出）
+ */
+export function enlargeSharp(rgba, width, height, targetWidth = null) {
+  const big = enlarge(rgba, width, height, null, targetWidth);
+  return sharpen(big.rgba, big.width, big.height, 0.6);
+}
