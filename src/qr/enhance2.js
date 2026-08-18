@@ -42,7 +42,7 @@ export function enhance2(rgba, width, height, modulePx = 8) {
 
     if (bounds) {
       // 检测到 logo → 贴片重绘 + 自检（保留 logo；自检失败再试无 logo 版）
-      const ringW = grid.modulePx * 0.8;
+      const ringW = grid.modulePx * 1.5; // 白环外扩（覆盖完整白环，贴片边缘落白环内避免黑底描边）
       const logoRatio = (bounds.halfW * 2 + ringW * 2) / (grid.modulePx * grid.n);
       const srcHalf = (bounds.halfW + bounds.halfH) / 2 + ringW;
       const original = { rgba, width, height, cx: bounds.cx, cy: bounds.cy, srcHalf, logoRatio };
