@@ -25,9 +25,11 @@ export function enhance2(rgba, width, height, modulePx = 8) {
     style.moduleRadius = modStyle.moduleRadius;
     style.moduleFill = modStyle.moduleFill;
     // logo 定位：码中心 + 半径（码尺寸 ~12%）
-    const [lcx, lcy] = grid.toPixel(grid.n / 2, grid.n / 2);
-    const radius = grid.modulePx * grid.n * 0.12;
-    const original = { rgba, width, height, cx: lcx, cy: lcy, radius };
+    const [lcx, lcy] = grid.toPixel((grid.n - 1) / 2, (grid.n - 1) / 2);
+    // logo 方形区域：原图码中心，半边长 = 码宽 * logoRatio/2
+    const logoRatio = 0.22;
+    const srcHalf = grid.modulePx * grid.n * (logoRatio / 2);
+    const original = { rgba, width, height, cx: lcx, cy: lcy, srcHalf, logoRatio };
     const out = redraw(matrix, grid.n, style, modulePx, original);
 
     // 自检：输出可解码且与原图解码一致

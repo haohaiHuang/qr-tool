@@ -73,7 +73,7 @@ test("TC-R3: 重绘保留中心 logo", () => {
   // logo 定位：码中心 + 半径
   const [lcx, lcy] = grid.toPixel(grid.n / 2, grid.n / 2);
   const lr = width * 0.12;
-  const out = redraw(sampled, grid.n, style, 8, { rgba, width, height, cx: lcx, cy: lcy, radius: lr });
+  const out = redraw(sampled, grid.n, style, 8, { rgba, width, height, cx: lcx, cy: lcy, srcHalf: lr, logoRatio: 0.22 });
   // 输出中心像素应接近 logo 红（220,30,30），而非纯 fg/bg
   const oi = (Math.floor(out.height / 2) * out.width + Math.floor(out.width / 2)) * 4;
   assert.ok(out.rgba[oi] > 150 && out.rgba[oi + 1] < 100, `中心应含红色 logo，实际 [${out.rgba[oi]},${out.rgba[oi + 1]},${out.rgba[oi + 2]}]`);
@@ -139,7 +139,7 @@ test("TC-R5: logo 区域原样（非模块压底）", () => {
   const style = detectStyle(rgba, width, height);
   const [lcx, lcy] = grid.toPixel(grid.n / 2, grid.n / 2);
   const lr = width * 0.12;
-  const out = redraw(sampled, grid.n, style, 8, { rgba, width, height, cx: lcx, cy: lcy, radius: lr });
+  const out = redraw(sampled, grid.n, style, 8, { rgba, width, height, cx: lcx, cy: lcy, srcHalf: lr, logoRatio: 0.22 });
   // logo 圆心像素 = 原图圆心像素（原样，而非模块色）
   const oi = (Math.floor(out.height / 2) * out.width + Math.floor(out.width / 2)) * 4;
   assert.ok(out.rgba[oi] > 150 && out.rgba[oi + 1] < 100, `logo 中心应=原图 logo 红，实际 [${out.rgba[oi]},${out.rgba[oi + 1]},${out.rgba[oi + 2]}]`);

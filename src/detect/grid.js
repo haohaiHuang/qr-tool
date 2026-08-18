@@ -109,5 +109,6 @@ export function detectModuleStyle(gray, width, height, grid, threshold = 128) {
   const fgW = sorted[Math.floor(sorted.length / 2)];
   const moduleFill = Math.max(0.5, Math.min(1, fgW / modulePx));
   const hasGap = moduleFill < 0.97;
-  return { moduleRadius: hasGap ? 0.3 : 0, moduleFill: hasGap ? moduleFill : 1 };
+  return { moduleRadius: hasGap ? 0.15 : 0, moduleFill: hasGap ? moduleFill : 1 };
 }
+

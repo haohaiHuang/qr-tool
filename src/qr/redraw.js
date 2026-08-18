@@ -10,22 +10,20 @@ function inRoundedRect(x, y, cx, cy, half, radius) {
   return ex * ex + ey * ey <= radius * radius;
 }
 
-/** 双线性采样原图像素 */
-function sampleBilinear(rgba, w, h, sx, sy) {
-  const x0 = Math.min(w - 1, Math.max(0, Math.floor(sx)));
-  const y0 = Math.min(h - 1, Math.max(0, Math.floor(sy)));
-  const x1 = Math.min(w - 1, x0 + 1);
-  const y1 = Math.min(h - 1, y0 + 1);
-  const fx = sx - x0, fy = sy - y0;
-  const out = [];
-  for (let ch = 0; ch < 3; ch++) {
-    const v00 = rgba[(y0 * w + x0) * 4 + ch];
-    const v10 = rgba[(y0 * w + x1) * 4 + ch];
-    const v01 = rgba[(y1 * w + x0) * 4 + ch];
-    const v11 = rgba[(y1 * w + x1) * 4 + ch];
-    out[ch] = Math.round(v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy);
+/** 区域平均采样（对缩小贴片抗混叠；输出像素覆盖原图 [sx0,sx1]×[sy0,sy1] 区域取平均） */
+function sampleArea(rgba, w, h, sx0, sy0, sx1, sy1) {
+  const x0 = Math.min(w - 1, Math.max(0, Math.floor(sx0)));
+  const y0 = Math.min(h - 1, Math.max(0, Math.floor(sy0)));
+  const x1 = Math.min(w - 1, Math.max(0, Math.ceil(sx1)));
+  const y1 = Math.min(h - 1, Math.max(0, Math.ceil(sy1)));
+  let sum = [0, 0, 0], n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = (y * w + x) * 4;
+      sum[0] += rgba[i]; sum[1] += rgba[i + 1]; sum[2] += rgba[i + 2]; n++;
+    }
   }
-  return out;
+  return n > 0 ? [Math.round(sum[0] / n), Math.round(sum[1] / n), Math.round(sum[2] / n)] : [255, 255, 255];
 }
 
 /**
@@ -43,10 +41,10 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
   const half = (modulePx * moduleFill) / 2;
   const radius = modulePx * moduleRadius;
 
-  // logo 输出圆（中心）
-  const logoOutR = original ? px * 0.14 : 0;
+  // logo 区域：输出中心方形（不假设圆形；原图中心方形区域原样贴，保持 logo 形态与周边空白）
+  const logoHalf = original ? px * (original.logoRatio || 0.22) / 2 : 0;
   const logoCx = px / 2, logoCy = px / 2;
-  const inLogo = (x, y) => Math.hypot(x - logoCx, y - logoCy) <= logoOutR;
+  const inLogo = (x, y) => Math.abs(x - logoCx) <= logoHalf && Math.abs(y - logoCy) <= logoHalf;
 
   // 1) 画模块（logo 区域跳过；finder 区实心保证定位，数据区用间隙/圆角样式）
   const inFinder = (r, c) =>
@@ -74,19 +72,36 @@ export function redraw(matrix, n, style, modulePx = 8, original = null) {
     }
   }
 
-  // 2) 贴原图 logo（双线性平滑）
+  // 2) 贴原图 logo 区域（方形，双线性 + 边缘羽化避免"点状围边"硬切）
   if (original) {
-    const { rgba: orig, width: ow, height: oh, cx, cy, radius: srcR } = original;
-    for (let dy = -Math.floor(logoOutR); dy <= Math.floor(logoOutR); dy++) {
-      for (let dx = -Math.floor(logoOutR); dx <= Math.floor(logoOutR); dx++) {
-        if (Math.hypot(dx, dy) > logoOutR) continue;
-        const sx = cx + (dx / logoOutR) * srcR;
-        const sy = cy + (dy / logoOutR) * srcR;
-        const [r, g, b] = sampleBilinear(orig, ow, oh, sx, sy);
+    const { rgba: orig, width: ow, height: oh, cx, cy, srcHalf } = original;
+    const fade = Math.max(2, Math.round(px * 0.012)); // 羽化宽度（输出 ~3px）
+    for (let dy = -Math.floor(logoHalf); dy <= Math.floor(logoHalf); dy++) {
+      for (let dx = -Math.floor(logoHalf); dx <= Math.floor(logoHalf); dx++) {
+        // 边缘羽化 alpha：距边界 fade 内从 255 → 0
+        const dEdge = Math.max(
+          Math.abs(dx) - (logoHalf - fade),
+          Math.abs(dy) - (logoHalf - fade),
+        );
+        let alpha = 255;
+        if (dEdge > 0) alpha = Math.max(0, Math.round(255 * (1 - dEdge / fade)));
+        // 原图源步长（输出 1px = 原图 srcStep px；缩小 >1 时区域平均抗混叠）
+        const srcStep = srcHalf / logoHalf;
+        const sx = cx + (dx / logoHalf) * srcHalf;
+        const sy = cy + (dy / logoHalf) * srcHalf;
+        const [r, g, b] = sampleArea(orig, ow, oh, sx, sy, sx + srcStep, sy + srcStep);
         const oy = Math.floor(logoCy) + dy;
         const ox = Math.floor(logoCx) + dx;
         const di = (oy * px + ox) * 4;
-        rgba[di] = r; rgba[di + 1] = g; rgba[di + 2] = b; rgba[di + 3] = 255;
+        if (alpha >= 255) {
+          rgba[di] = r; rgba[di + 1] = g; rgba[di + 2] = b; rgba[di + 3] = 255;
+        } else if (alpha > 0) {
+          // 与已画内容混合（羽化过渡）
+          const t = alpha / 255;
+          rgba[di] = Math.round(r * t + rgba[di] * (1 - t));
+          rgba[di + 1] = Math.round(g * t + rgba[di + 1] * (1 - t));
+          rgba[di + 2] = Math.round(b * t + rgba[di + 2] * (1 - t));
+        }
       }
     }
   }
