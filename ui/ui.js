@@ -56,24 +56,15 @@ async function handleFile(file) {
     const route = classifyCode(gray, canvas.width, canvas.height);
 
     if (route.type === "qr") {
+      // 标准码：语义级重建（结构重绘）——模块矢量重绘才是"高清无损"（任意分辨率锐利）
       const target = 1184;
-      const sharpness = detectSharpness(imgData.data, canvas.width, canvas.height);
-      if (!needsRebuild(imgData.data, canvas.width, canvas.height, sharpness)) {
-        // 原图清晰 → 像素级保真（高清放大，保留原样，不做无谓重建）
-        const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
-        current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
-        showPreview(imgData.data, canvas.width, canvas.height, current);
-        status(`✅ 原图清晰，直接高清放大（保留原样）：${canvas.width}px → ${big.width}px`);
-        return;
-      }
-      // 原图模糊 → 语义级重建（结构重绘，锐化）
       const r = enhance2(imgData.data, canvas.width, canvas.height, Math.round(target / 37));
       if (!r.ok) {
-        // 重建失败 → 保真兜底（不报错）
+        // 重建失败 → 像素放大兜底（不报错，但非无损）
         const big = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
         current = { rgba: big.rgba, width: big.width, height: big.height, text: "二维码", fallback: true };
         showPreview(imgData.data, canvas.width, canvas.height, current);
-        status(`⚠️ 结构重绘失败，已用高清放大兜底（保留原样）：${canvas.width}px → ${big.width}px`, "warn");
+        status(`⚠️ 结构重绘失败，已用高清放大兜底（保留原样，非矢量无损）：${canvas.width}px → ${big.width}px`, "warn");
         return;
       }
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix };
