@@ -122,7 +122,7 @@ document.getElementById("dl-svg").addEventListener("click", () => {
     c.getContext("2d").putImageData(new ImageData(current.origData, current.origW, current.origH), 0, 0);
     const dataUrl = c.toDataURL("image/png");
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${current.width}" height="${current.height}" viewBox="0 0 ${current.origW} ${current.origH}">` +
-      `<rect width="100%" height="100%" fill="#ffffff"/><image width="100%" height="100%" href="${dataUrl}"/></svg>`;
+      `<rect width="${current.origW}" height="${current.origH}" fill="#ffffff"/><image x="0" y="0" width="${current.origW}" height="${current.origH}" preserveAspectRatio="xMidYMid meet" href="${dataUrl}"/></svg>`;
     const blob = new Blob([svg], { type: "image/svg+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
