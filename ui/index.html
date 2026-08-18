@@ -64,8 +64,17 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 </head>
 <body>
 <main>
-  <h1>QR 码增强工具</h1>
-  <p class="sub">低分辨率码 → 高清 PNG / SVG（标准码解码重生 · 风格保留 · 闭环自检）</p>
+  <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2.5rem">
+    <div style="display:inline-flex; align-items:center; gap:.7rem; font-weight:760; letter-spacing:-.03em">
+      <div style="display:grid; width:34px; height:34px; place-items:center; color:#fff; border-radius:10px; background:var(--accent); box-shadow:0 8px 18px rgb(23 107 93 / 22%); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px">QR</div>
+      QR 码增强工具
+    </div>
+    <div style="display:inline-flex; align-items:center; gap:.5rem; color:var(--muted); font-size:13px">
+      <span style="width:7px; height:7px; border-radius:50%; background:#43a188; box-shadow:0 0 0 4px rgb(67 161 136 / 12%)"></span>
+      数据本地处理
+    </div>
+  </header>
+  <p class="sub">低分辨率码 → 高清 PNG / SVG（标准码结构重绘 · 风格保留 · 闭环自检）</p>
 
   <div id="drop">
     <strong>拖拽图片到此处</strong>，或点击选择文件
@@ -80,7 +89,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
     </div>
     <div class="bar">
       <button id="dl-png" class="primary">下载 PNG</button>
-      <button id="dl-svg">下载 SVG（矢量）</button>
+      <button id="dl-svg">下载 SVG</button>
       <div style="margin-left:auto; display:flex; align-items:center; gap:.5rem">
         <span id="switch-hint" style="cursor:pointer; position:relative; font-size:1rem; line-height:1; display:inline-flex">
           <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="switch-hint-bubble" style="display:none; position:absolute; bottom:130%; right:0; background:#333; color:#fff; padding:.6rem .8rem; border-radius:6px; font-size:.78rem; width:230px; z-index:20; box-shadow:0 2px 8px rgba(0,0,0,.2)">如增强重绘效果不理想，可点击「原图放大」切换为像素保真模式</span>
