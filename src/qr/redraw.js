@@ -1,46 +1,92 @@
 // 方案 B：高清矢量重绘 — 纯函数，node 可测
-// 按原模块矩阵重绘（保留排列），Otsu 配色，可选中心 logo 原样叠加
+// 模块支持圆角+间隙（微信码虚线感）；logo 区域不画模块（原样贴原图，双线性平滑）
+
+function inRoundedRect(x, y, cx, cy, half, radius) {
+  const dx = Math.abs(x - cx), dy = Math.abs(y - cy);
+  if (dx > half || dy > half) return false;
+  if (radius <= 0) return true;
+  if (dx <= half - radius || dy <= half - radius) return true;
+  const ex = dx - (half - radius), ey = dy - (half - radius);
+  return ex * ex + ey * ey <= radius * radius;
+}
+
+/** 双线性采样原图像素 */
+function sampleBilinear(rgba, w, h, sx, sy) {
+  const x0 = Math.min(w - 1, Math.max(0, Math.floor(sx)));
+  const y0 = Math.min(h - 1, Math.max(0, Math.floor(sy)));
+  const x1 = Math.min(w - 1, x0 + 1);
+  const y1 = Math.min(h - 1, y0 + 1);
+  const fx = sx - x0, fy = sy - y0;
+  const out = [];
+  for (let ch = 0; ch < 3; ch++) {
+    const v00 = rgba[(y0 * w + x0) * 4 + ch];
+    const v10 = rgba[(y0 * w + x1) * 4 + ch];
+    const v01 = rgba[(y1 * w + x0) * 4 + ch];
+    const v11 = rgba[(y1 * w + x1) * 4 + ch];
+    out[ch] = Math.round(v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy);
+  }
+  return out;
+}
 
 /**
  * 重绘模块矩阵为高清 RGBA
  * @param matrix 模块矩阵 [row][col]（dark=true）
  * @param n 模块数
- * @param style { fg:[r,g,b], bg:[r,g,b] }
- * @param modulePx 每模块像素（输出分辨率）
- * @param original 可选 { rgba, width, height, cx, cy, radius } 原图 + logo 中心/半径 → 中心叠加原 logo
- * @returns { rgba, width, height }
+ * @param style { fg, bg, moduleRadius?（圆角占格子比例）, moduleFill?（模块填充比例，<1 留间隙） }
+ * @param modulePx 每模块像素
+ * @param original 可选 { rgba, width, height, cx, cy, radius } → 中心 logo 原样（双线性）叠加
  */
 export function redraw(matrix, n, style, modulePx = 8, original = null) {
+  const { fg, bg, moduleRadius = 0, moduleFill = 1 } = style;
   const px = n * modulePx;
   const rgba = new Uint8ClampedArray(px * px * 4);
+  const half = (modulePx * moduleFill) / 2;
+  const radius = modulePx * moduleRadius;
 
-  // 1) 画模块（方形，保留原排列 + 配色）
+  // logo 输出圆（中心）
+  const logoOutR = original ? px * 0.14 : 0;
+  const logoCx = px / 2, logoCy = px / 2;
+  const inLogo = (x, y) => Math.hypot(x - logoCx, y - logoCy) <= logoOutR;
+
+  // 1) 画模块（logo 区域跳过；finder 区实心保证定位，数据区用间隙/圆角样式）
+  const inFinder = (r, c) =>
+    (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
   for (let y = 0; y < px; y++) {
-    const modR = Math.min(n - 1, Math.floor(y / modulePx));
     for (let x = 0; x < px; x++) {
+      if (inLogo(x, y)) continue;
+      const modR = Math.min(n - 1, Math.floor(y / modulePx));
       const modC = Math.min(n - 1, Math.floor(x / modulePx));
-      const dark = matrix[modR][modC];
-      const [r, g, b] = dark ? style.fg : style.bg;
       const i = (y * px + x) * 4;
-      rgba[i] = r; rgba[i + 1] = g; rgba[i + 2] = b; rgba[i + 3] = 255;
+      if (!matrix[modR][modC]) {
+        rgba[i] = bg[0]; rgba[i + 1] = bg[1]; rgba[i + 2] = bg[2]; rgba[i + 3] = 255;
+        continue;
+      }
+      const solid = inFinder(modR, modC); // finder 区实心
+      const effHalf = solid ? modulePx / 2 : half;
+      const effRadius = solid ? 0 : radius;
+      const cellCx = (modC + 0.5) * modulePx;
+      const cellCy = (modR + 0.5) * modulePx;
+      if (inRoundedRect(x, y, cellCx, cellCy, effHalf, effRadius)) {
+        rgba[i] = fg[0]; rgba[i + 1] = fg[1]; rgba[i + 2] = fg[2]; rgba[i + 3] = 255;
+      } else {
+        rgba[i] = bg[0]; rgba[i + 1] = bg[1]; rgba[i + 2] = bg[2]; rgba[i + 3] = 255;
+      }
     }
   }
 
-  // 2) 中心叠加原 logo（原图对应区域缩放到输出中心）
+  // 2) 贴原图 logo（双线性平滑）
   if (original) {
-    const { rgba: orig, width: ow, height: oh, cx, cy, radius } = original;
-    const outR = px * 0.14; // 输出 logo 半径（码尺寸 ~14%）
-    for (let dy = -Math.floor(outR); dy <= Math.floor(outR); dy++) {
-      for (let dx = -Math.floor(outR); dx <= Math.floor(outR); dx++) {
-        if (Math.hypot(dx, dy) > outR) continue;
-        const ox = Math.round(cx + (dx / outR) * radius);
-        const oy = Math.round(cy + (dy / outR) * radius);
-        if (ox < 0 || ox >= ow || oy < 0 || oy >= oh) continue;
-        const si = (oy * ow + ox) * 4;
-        const oy2 = Math.floor(px / 2) + dy;
-        const ox2 = Math.floor(px / 2) + dx;
-        const di = (oy2 * px + ox2) * 4;
-        rgba[di] = orig[si]; rgba[di + 1] = orig[si + 1]; rgba[di + 2] = orig[si + 2]; rgba[di + 3] = 255;
+    const { rgba: orig, width: ow, height: oh, cx, cy, radius: srcR } = original;
+    for (let dy = -Math.floor(logoOutR); dy <= Math.floor(logoOutR); dy++) {
+      for (let dx = -Math.floor(logoOutR); dx <= Math.floor(logoOutR); dx++) {
+        if (Math.hypot(dx, dy) > logoOutR) continue;
+        const sx = cx + (dx / logoOutR) * srcR;
+        const sy = cy + (dy / logoOutR) * srcR;
+        const [r, g, b] = sampleBilinear(orig, ow, oh, sx, sy);
+        const oy = Math.floor(logoCy) + dy;
+        const ox = Math.floor(logoCx) + dx;
+        const di = (oy * px + ox) * 4;
+        rgba[di] = r; rgba[di + 1] = g; rgba[di + 2] = b; rgba[di + 3] = 255;
       }
     }
   }

@@ -1,7 +1,7 @@
 // 方案 B 主管道：结构重绘（B）优先 → 重编码（A）回退 — 纯函数，node 可测
 
 import { toGrayImage } from "../shared/pixels.js";
-import { detectGrid } from "../detect/grid.js";
+import { detectGrid, detectModuleStyle } from "../detect/grid.js";
 import { sampleModules } from "../detect/sampler.js";
 import { detectStyle } from "./style.js";
 import { redraw } from "./redraw.js";
@@ -20,6 +20,10 @@ export function enhance2(rgba, width, height, modulePx = 8) {
   if (grid) {
     const matrix = sampleModules(gray, width, height, grid);
     const style = detectStyle(rgba, width, height);
+    // 模块样式（圆角+间隙，微信码虚线感）
+    const modStyle = detectModuleStyle(gray, width, height, grid);
+    style.moduleRadius = modStyle.moduleRadius;
+    style.moduleFill = modStyle.moduleFill;
     // logo 定位：码中心 + 半径（码尺寸 ~12%）
     const [lcx, lcy] = grid.toPixel(grid.n / 2, grid.n / 2);
     const radius = grid.modulePx * grid.n * 0.12;

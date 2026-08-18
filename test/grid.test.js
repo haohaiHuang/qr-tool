@@ -1,8 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { detectGrid } from "../src/detect/grid.js";
+import { detectGrid, detectModuleStyle } from "../src/detect/grid.js";
 import { toGrayImage } from "../src/shared/pixels.js";
 import { buildQrImage } from "./helpers/qr-image.js";
+
+const QUIET = 4;
+import { redraw } from "../src/qr/redraw.js";
+import { generateMatrix } from "../src/qr/generate.js";
 
 // TC-G1: 合成码（纯黑白 quiet=4）网格误差 ≤0.5 模块
 test("TC-G1: 合成码网格定位（quiet=4）", () => {
@@ -64,4 +68,29 @@ test("TC-G3: 模糊码网格定位", () => {
   assert.equal(grid.n, 21);
   const [x0] = grid.toPixel(0, 0);
   assert.ok(Math.abs(x0 - 18) <= 4, `模糊码模块(0,0) x≈18（容差 1 模块），实际 ${x0}`);
+});
+
+// TC-G5: 实心模块码 → moduleFill≈1（无间隙）
+test("TC-G5: 实心模块检测无间隙", () => {
+  const { rgba, width, height } = buildQrImage("GRID G5 SOLID", 4, QUIET);
+  const gray = toGrayImage(rgba, width, height);
+  const grid = detectGrid(gray, width, height);
+  assert.ok(grid);
+  const style = detectModuleStyle(gray, width, height, grid);
+  assert.ok(style.moduleFill >= 0.97, `实心模块 fill 应≈1，实际 ${style.moduleFill}`);
+  assert.equal(style.moduleRadius, 0);
+});
+
+// TC-G6: 间隙+圆角码（redraw 生成）→ 检测出间隙
+test("TC-G6: 间隙圆角模块检测出 fill<1", () => {
+  const { matrix } = generateMatrix("GRID G6 GAP", QUIET);
+  const n = matrix.length;
+  // 用 redraw 生成圆角间隙码
+  const out = redraw(matrix, n, { fg: [0, 0, 0], bg: [255, 255, 255], moduleRadius: 0.3, moduleFill: 0.85 }, 4);
+  const gray = toGrayImage(out.rgba, out.width, out.height);
+  const grid = detectGrid(gray, out.width, out.height);
+  assert.ok(grid);
+  const style = detectModuleStyle(gray, out.width, out.height, grid);
+  assert.ok(style.moduleFill < 0.95, `间隙码 fill 应<1，实际 ${style.moduleFill}`);
+  assert.ok(style.moduleRadius > 0, `间隙码应有圆角，实际 ${style.moduleRadius}`);
 });

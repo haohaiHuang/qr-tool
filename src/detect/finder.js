@@ -19,6 +19,26 @@ function runLengths(row, width) {
   return runs;
 }
 
+/** 合并游程中的小 gap（白段 < 相邻黑段一半）：间隙样式（圆角模块留缝）会把
+ *  finder 的"黑3模块"拆成 黑-gap-黑，合并后恢复 1:1:3:1:1 */
+function mergeGaps(runs) {
+  const out = [];
+  for (let i = 0; i < runs.length; i++) {
+    const r = runs[i];
+    if (r.color === 255 && i > 0 && i < runs.length - 1) {
+      const prev = out[out.length - 1];
+      const next = runs[i + 1];
+      if (prev.color === 0 && next.color === 0 && r.len <= Math.min(prev.len, next.len) * 0.5) {
+        prev.len += r.len + next.len; // 黑-gap-黑 合并
+        i++; // 跳过下一个黑段
+        continue;
+      }
+    }
+    out.push({ ...r });
+  }
+  return out;
+}
+
 /** 判断 5 段是否近似 1:1:3:1:1（黑白黑白黑），返回 { x: 中心x, modulePx: 每模块像素 } 或 null */
 function matchFinderRuns(runs, i, width) {
   const r0 = runs[i], r1 = runs[i + 1], r2 = runs[i + 2], r3 = runs[i + 3], r4 = runs[i + 4];
@@ -32,12 +52,13 @@ function matchFinderRuns(runs, i, width) {
   const r0r = Math.min(r0.len, r4.len) + 1;
   const r0b = Math.max(r0.len, r4.len);
   const wAvg = (r1.len + r3.len) / 2;
-  if (wAvg > r0b * 1.6 || wAvg < r0r * 0.4) return null;
+  if (wAvg > r0b * 2.0 || wAvg < r0r * 0.4) return null;
   // 中心 x（r2 的中间，即 r0+r1 之后 + r2/2）
   let x = 0;
   for (let k = 0; k <= i + 2; k++) x += runs[k].len;
   x -= runs[i + 2].len / 2;
-  return { x: Math.round(x), modulePx: (r0.len + r4.len) / 2 };
+  // modulePx：黑段+白段约 2 模块（间隙样式黑段<格子，黑白平均吸收 gap）
+  return { x: Math.round(x), modulePx: (r0.len + r1.len) / 2 };
 }
 
 /** 垂直验证：从 (x, cy) 向上定位完整 1:1:3:1:1 模式起点，再数 5 段验证，返回中心 y 或 null */
@@ -70,16 +91,18 @@ function verifyVertical(gray, width, height, x, cy) {
     p++;
   }
   seg.push({ color: cur, len });
-  if (seg.length < 5) return null;
+  // 合并 gap（间隙样式：finder 黑3模块被模块间缝拆散）
+  const merged = mergeGaps(seg);
+  if (merged.length < 5) return null;
   // 4) 检查 黑 白 黑 白 黑
-  const r0 = seg[0], r1 = seg[1], r2 = seg[2], r3 = seg[3], r4 = seg[4];
+  const r0 = merged[0], r1 = merged[1], r2 = merged[2], r3 = merged[3], r4 = merged[4];
   if (r0.color !== 0 || r1.color !== 255 || r2.color !== 0 || r3.color !== 255 || r4.color !== 0) return null;
   const ratio = r2.len / (r0.len + r4.len + 1);
   if (ratio < 1.2 || ratio > 2.2) return null;
   const r0r = Math.min(r0.len, r4.len) + 1;
   const r0b = Math.max(r0.len, r4.len);
   const wAvg = (r1.len + r3.len) / 2;
-  if (wAvg > r0b * 1.6 || wAvg < r0r * 0.4) return null;
+  if (wAvg > r0b * 2.0 || wAvg < r0r * 0.4) return null;
   // 5) 中心 y = r0 起点 + r0 + r1 + r2/2
   return Math.round(start + r0.len + r1.len + r2.len / 2);
 }
@@ -117,7 +140,7 @@ export function detectFinderPatterns(gray, width, height, threshold = 128) {
   const candidates = [];
   for (let y = 0; y < height; y++) {
     const row = bin.subarray(y * width, (y + 1) * width);
-    const runs = runLengths(row, width);
+    const runs = mergeGaps(runLengths(row, width));
     for (let i = 0; i < runs.length - 4; i++) {
       const m = matchFinderRuns(runs, i, width);
       if (m === null) continue;

@@ -83,3 +83,31 @@ export function detectGrid(gray, width, height) {
 
   return { n, modulePx, toPixel, finders: [tl, tr, bl] };
 }
+
+/**
+ * 检测模块样式（间隙/圆角）：沿数据区中间行扫描 dark 段宽度
+ * 实心模块 → fill≈1 无圆角；微信码类（间隙+圆角）→ fill<1 有圆角
+ * @returns { moduleRadius, moduleFill }
+ */
+export function detectModuleStyle(gray, width, height, grid, threshold = 128) {
+  const { n, modulePx } = grid;
+  const r = Math.floor(n / 2);
+  const [, y] = grid.toPixel(r, 0);
+  const cy = Math.max(0, Math.min(height - 1, Math.round(y)));
+  // 该行 dark 段宽度
+  const runs = [];
+  let inDark = false, start = 0;
+  for (let x = 0; x < width; x++) {
+    const dark = gray[cy * width + x] < threshold;
+    if (dark && !inDark) { inDark = true; start = x; }
+    else if (!dark && inDark) { inDark = false; runs.push(x - start); }
+  }
+  if (inDark) runs.push(width - start);
+  // dark 段 = 模块 fg 宽（排除 finder 大段 > 2 模块）
+  const sorted = runs.filter((w) => w < modulePx * 2 && w >= modulePx * 0.3).sort((a, b) => a - b);
+  if (sorted.length === 0) return { moduleRadius: 0, moduleFill: 1 };
+  const fgW = sorted[Math.floor(sorted.length / 2)];
+  const moduleFill = Math.max(0.5, Math.min(1, fgW / modulePx));
+  const hasGap = moduleFill < 0.97;
+  return { moduleRadius: hasGap ? 0.3 : 0, moduleFill: hasGap ? moduleFill : 1 };
+}
