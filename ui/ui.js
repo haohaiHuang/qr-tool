@@ -65,7 +65,8 @@ async function handleFile(file) {
       current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix };
       showPreview(imgData.data, canvas.width, canvas.height, current);
       const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
-      status(`✅ 增强完成（${engine}）：内容「${r.text}」· ${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
+      const shortText = r.text.length > 40 ? r.text.slice(0, 40) + "…" : r.text;
+      status(`✅ 增强完成（${engine}）：内容「${shortText}」· ${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
     } else if (route.type === "wechat") {
       status("检测到微信小程序码：建议在微信开发者后台用 API 重新生成（官方 1280px）。视觉重绘功能开发中。", "warn");
     } else {
