@@ -4,6 +4,7 @@ import { toGrayImage } from "../src/shared/pixels.js";
 import { classifyCode } from "../src/detect/route.js";
 import { enhance2 } from "../src/qr/enhance2.js";
 import { buildSvg } from "../src/svg.js";
+import { enlarge } from "../src/wechat.js";
 
 // 模块加载完成标记（诊断用：看到"就绪"说明 ui.js 执行成功）
 const drop = document.getElementById("drop");
@@ -67,7 +68,12 @@ async function handleFile(file) {
       const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
       status(`✅ 增强完成（${engine}）：${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
     } else if (route.type === "wechat") {
-      status("检测到微信小程序码：建议在微信开发者后台用 API 重新生成（官方 1280px）。视觉重绘功能开发中。", "warn");
+      // 微信圆形码：高清放大（保留原样/色彩/创意结构）
+      status("微信码高清放大中…");
+      const r = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: "微信小程序码", isWechat: true };
+      showPreview(imgData.data, canvas.width, canvas.height, current);
+      status(`✅ 微信码高清放大：${canvas.width}px → ${r.width}px（保留原样，扫码成功率不保证）`);
     } else {
       status("无法识别的码类型：请上传标准二维码或微信小程序码截图。", "warn");
     }
@@ -109,6 +115,7 @@ statusEl.textContent = "✓ 就绪：拖拽或点击选择二维码图片";
 
 document.getElementById("dl-svg").addEventListener("click", () => {
   if (!current) return;
+  if (current.isWechat) { status("微信码为原样放大，无矢量 SVG（可下载高清 PNG）", "warn"); return; }
   const logoDataUrl = current.logo && current.logo.srcHalf > 0 ? cropLogoPng(current.logo) : null;
   const svg = buildSvg(current.matrix, current.n, current.style, logoDataUrl, current.logo ? current.logo.logoRatio : 0);
   const blob = new Blob([svg], { type: "image/svg+xml" });
