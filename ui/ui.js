@@ -67,10 +67,12 @@ async function handleFile(file) {
         status(`⚠️ 结构重绘失败，已用高清放大兜底（保留原样，非矢量无损）：${canvas.width}px → ${big.width}px`, "warn");
         return;
       }
-      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix };
+      // 保存重绘结果 + 放大版（供切换），默认重绘
+      const enlarged = enlarge(imgData.data, canvas.width, canvas.height, null, 1184);
+      current = { rgba: r.rgba, width: r.width, height: r.height, text: r.text, style: r.style, n: r.n, logo: r.logo, matrix: r.matrix, alt: { rgba: enlarged.rgba, width: enlarged.width, height: enlarged.height }, mode: "redraw" };
       showPreview(imgData.data, canvas.width, canvas.height, current);
-      const engine = r.engine === "B" ? "结构重绘（保留原码排列/配色/logo）" : "重编码（兜底）";
-      status(`✅ 增强完成（${engine}）：${canvas.width}px → ${r.width}px · 自检通过 · 下载即当前结果`);
+      const engine = r.engine === "B" ? "结构重绘（模块矢量，高清无损）" : "重编码（兜底）";
+      status(`✅ ${engine}：${canvas.width}px → ${r.width}px · 自检通过 · 可切换「原样放大」`);
     } else if (route.type === "wechat") {
       // 微信圆形码：高清放大（保留原样/色彩/创意结构）
       status("微信码高清放大中…");
@@ -96,12 +98,25 @@ function showPreview(srcData, w, h, result) {
 }
 
 // ---------- 导出 ----------
+const switchBtn = document.getElementById("switch-mode");
+if (switchBtn) {
+  switchBtn.addEventListener("click", () => {
+    if (!current || !current.alt) return;
+    current.mode = current.mode === "redraw" ? "enlarge" : "redraw";
+    const data = current.mode === "redraw" ? current : current.alt;
+    outCanvas.width = data.width; outCanvas.height = data.height;
+    outCanvas.getContext("2d").putImageData(new ImageData(data.rgba, data.width, data.height), 0, 0);
+    switchBtn.textContent = current.mode === "redraw" ? "切换：原样放大" : "切换：结构重绘";
+    status(current.mode === "redraw" ? "当前：结构重绘（模块矢量，高清无损）" : "当前：原样放大（像素保真）");
+  });
+}
+
 document.getElementById("dl-png").addEventListener("click", () => {
   if (!current) return;
-  // 直接用当前高清结果（与预览完全一致）
+  const data = current.alt && current.mode === "enlarge" ? current.alt : current;
   const canvas = document.createElement("canvas");
-  canvas.width = current.width; canvas.height = current.height;
-  canvas.getContext("2d").putImageData(new ImageData(current.rgba, current.width, current.height), 0, 0);
+  canvas.width = data.width; canvas.height = data.height;
+  canvas.getContext("2d").putImageData(new ImageData(data.rgba, data.width, data.height), 0, 0);
   canvas.toBlob((blob) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
