@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D 樱花树 QR — Demo</title>
+<script type="importmap">
+{
+  "imports": {
+    "qrcode-generator": "./vendor/qrcode-generator.mjs",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+:root {
+  --paper: #f7f5ef; --surface: #fffefa; --ink: #17201f; --muted: #65706d;
+  --line: #d8dcd5; --accent: #c25e7c; --accent-dark: #a34a67;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: var(--ink); background: var(--paper);
+  line-height: 1.6;
+}
+main { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 780; letter-spacing: -0.04em; }
+p.sub { color: var(--muted); font-size: 15px; margin-top: .4rem; }
+
+.row { display: flex; gap: .6rem; margin-top: 1.2rem; flex-wrap: wrap; align-items: center; }
+input[type=text] {
+  flex: 1; min-width: 240px; padding: .65rem .9rem; border: 1px solid var(--line);
+  border-radius: 10px; font-size: 15px; color: var(--ink); background: var(--surface);
+}
+button {
+  padding: .6rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font-size: 14px; cursor: pointer;
+  transition: all .15s;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.primary:hover { background: var(--accent-dark); }
+.hint { color: var(--muted); font-size: 13px; margin-top: .5rem; }
+
+.stage {
+  margin-top: 1.4rem; border-radius: 14px; overflow: hidden; position: relative;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 70% 15%, #fdeef3 0%, transparent 45%),
+    linear-gradient(180deg, #fdfcf8 0%, #f2efe6 100%);
+  height: 440px;
+}
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#gl { display: block; touch-action: none; }
+#flat2d { display: block; opacity: 0; pointer-events: none; transition: opacity .35s ease; background: #fff; }
+#flat2d.show { opacity: 1; }
+.badge {
+  position: absolute; top: 12px; left: 12px; font-size: 12px; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / 70%);
+  color: var(--muted); border: 1px solid var(--line); pointer-events: none;
+}
+
+.side { display: flex; gap: 1.2rem; margin-top: 1.2rem; align-items: flex-start; flex-wrap: wrap; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 1rem; min-width: 180px;
+}
+.card h3 { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: .6rem; text-transform: uppercase; letter-spacing: .08em; }
+#q2d { display: block; border-radius: 8px; background: #fff; }
+.card .note { font-size: 12px; color: var(--muted); margin-top: .5rem; max-width: 220px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>3D 樱花树 QR</h1>
+  <p class="sub">把二维码变成一棵可扫码的 3D 樱花树——深色模块 = 粉色樱花穹顶 / 棕色树干 / 绿色草地，浅色模块 = 奶油色地面。</p>
+
+  <div class="row">
+    <input type="text" id="text" value="https://enzo.fyi" placeholder="输入任意文本 / URL" spellcheck="false">
+    <button id="upload">上传 QR 图片</button>
+    <button id="flat">扁平扫码视图</button>
+    <button id="spin">自动旋转：开</button>
+    <input type="file" id="file" accept="image/*" hidden>
+  </div>
+  <p class="hint">输入文本实时生成 · 或上传已有标准 QR 图片采样成树 · 拖拽旋转 / 滚轮缩放 · 「扁平扫码视图」切换高对比彩色二维码（手机可扫）</p>
+
+  <div class="stage">
+    <canvas id="gl"></canvas>
+    <canvas id="flat2d"></canvas>
+    <div class="badge" id="badge">3D 视图</div>
+  </div>
+
+  <div class="side">
+    <div class="card">
+      <h3>可扫码 2D 预览</h3>
+      <canvas id="q2d"></canvas>
+      <p class="note">同一份数据的标准黑白码，手机扫这里验证内容一致。</p>
+    </div>
+    <div class="card" style="flex:1">
+      <h3>这是什么</h3>
+      <p class="note" style="max-width:440px">
+        原理：每个 3D 方块 1:1 对应一个 QR 模块。中心深色模块堆成树干，冠区深色模块按离中心距离堆成粉色穹顶（越靠中心层数越多），冠外深色模块是草地，浅色模块是地面。俯视投影仍是完整二维码，所以拍平后依然可扫。技术：Three.js 实例化渲染（单个 InstancedMesh 画上千个方块）+ 标准材质光照。
+      </p>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { classifyCode } from "../src/detect/route.js";
+import { sampleModules } from "../src/detect/sampler.js";
+import { toGrayImage } from "../src/shared/pixels.js";
+import { generateMatrix } from "../src/qr/generate.js";
+import { buildBlocks, BLOCK } from "../src/qr3d/layout.js";
+import { matrixToColoredRgba } from "../src/qr3d/flat.js";
+
+// ---------- 渲染常量 ----------
+const PALETTE_3D = [0xf6ead0, 0xf2a7c0, 0x7a4a2b, 0x8cc469]; // 3D：柔和（奶油/粉/棕/绿）
+
+// ---------- 场景 ----------
+const container = document.querySelector(".stage");
+const canvas = document.getElementById("gl");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.01, 100);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0xd8d2c0, 0.9);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2e0, 1.6);
+sun.position.set(3, 5, 2);
+scene.add(sun);
+const amb = new THREE.AmbientLight(0xffffff, 0.25);
+scene.add(amb);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.7;
+controls.maxPolarAngle = Math.PI * 0.6;
+
+// 相机位置（等距 / 俯视）
+const ISO_POS = new THREE.Vector3(2.8, 2.4, 2.8);
+const ISO_TGT = new THREE.Vector3(0, 0.7, 0);
+const FLAT_POS = new THREE.Vector3(0, 4.2, 0.001);
+const FLAT_TGT = new THREE.Vector3(0, 0, 0);
+camera.position.copy(ISO_POS);
+controls.target.copy(ISO_TGT);
+
+// ---------- InstancedMesh ----------
+const maxCount = 30000;
+const geo = new THREE.BoxGeometry(1, 1, 1);
+const matStd = new THREE.MeshStandardMaterial({ roughness: 0.88, metalness: 0 });
+const mesh = new THREE.InstancedMesh(geo, matStd, maxCount);
+scene.add(mesh);
+
+const dummy = new THREE.Object3D();
+const color = new THREE.Color();
+function applyToMesh(blocks, palette, jitter = true) {
+  mesh.count = blocks.length;
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    dummy.position.set(b.x, b.y, b.z);
+    dummy.scale.setScalar(BLOCK);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    color.setHex(palette[b.type]);
+    if (jitter) { // 仅 3D：轻微随机亮度变化避免死板；扁平关闭以保证可扫
+      const v = 1 + (Math.sin((b.x * 7 + b.z * 13 + b.y * 5)) * 0.5 + 0.5 - 0.5) * 0.12;
+      color.multiplyScalar(Math.max(0.82, Math.min(1.18, v)));
+    }
+    mesh.setColorAt(i, color);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+}
+
+// ---------- 相机过渡（3D ↔ 扁平） ----------
+let anim = null;
+function tweenCam(toPos, toTgt, dur = 700, onDone = null) {
+  anim = {
+    fromP: camera.position.clone(), fromT: controls.target.clone(),
+    toP: toPos.clone(), toT: toTgt.clone(), start: performance.now(), dur, onDone,
+  };
+}
+const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+// ---------- 状态 ----------
+let flat = false;
+let cur = null; // { size, m }
+
+// ---------- 2D 预览 ----------
+const q2d = document.getElementById("q2d");
+function draw2d() {
+  if (!cur) return;
+  const px = Math.max(2, Math.floor(180 / cur.size));
+  q2d.width = q2d.height = cur.size * px;
+  const ctx = q2d.getContext("2d");
+  for (let r = 0; r < cur.size; r++) for (let c = 0; c < cur.size; c++) {
+    ctx.fillStyle = cur.m[r][c] ? "#111" : "#fff";
+    ctx.fillRect(c * px, r * px, px, px);
+  }
+}
+
+// 扁平视图：高对比彩色 2D 码（像素由 src/qr3d/flat.js 生成，这里只居中绘制）
+function drawFlat2d() {
+  if (!cur) return;
+  const c = document.getElementById("flat2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dw = Math.round(c.clientWidth * dpr), dh = Math.round(c.clientHeight * dpr);
+  c.width = dw; c.height = dh;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, dw, dh);
+  const qrPx = Math.max(1, Math.floor(Math.min(dw, dh) * 0.84 / cur.size));
+  const { rgba, width, height } = matrixToColoredRgba(cur, qrPx);
+  const ox = Math.round((dw - width) / 2), oy = Math.round((dh - height) / 2);
+  ctx.putImageData(new ImageData(rgba, width, height), ox, oy);
+}
+
+// ---------- 渲染（cur → 3D 树 + 2D 预览 + 扁平码） ----------
+function render() {
+  if (!cur) return;
+  applyToMesh(buildBlocks(cur), PALETTE_3D, true);
+  draw2d();
+  if (flat) drawFlat2d();
+}
+
+// ---------- 文本 → 矩阵 → 渲染 ----------
+function rebuild() {
+  const text = document.getElementById("text").value.trim();
+  if (!text) return;
+  const { size, matrix } = generateMatrix(text);
+  cur = { size, m: matrix };
+  if (cur.size > 45) badge.textContent = `内容过长（${cur.size}×${cur.size}），建议缩短`;
+  render();
+}
+
+const badge = document.getElementById("badge");
+const spinBtn = document.getElementById("spin");
+
+document.getElementById("text").addEventListener("keydown", (e) => { if (e.key === "Enter") rebuild(); });
+// 实时：输入即重建（轻微防抖，避免每个键都跑一次全量重生成）
+let debounce;
+document.getElementById("text").addEventListener("input", () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(rebuild, 120);
+});
+
+// ---------- 上传已有 QR 图片 → 采样矩阵 → 渲染 ----------
+async function decodeImage(file) {
+  try {
+    const b = await createImageBitmap(file);
+    return { img: b, w: b.width, h: b.height };
+  } catch {
+    // createImageBitmap 不支持某些格式（部分 HEIC/特殊编码）→ 回退 <img>
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = () => rej(new Error("图片无法解码"));
+        im.src = url;
+      });
+      return { img, w: img.naturalWidth, h: img.naturalHeight };
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+  }
+}
+
+async function processQRImage(blob) {
+  const { img, w, h } = await decodeImage(blob);
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const id = ctx.getImageData(0, 0, w, h);
+  const gray = toGrayImage(id.data, w, h);
+  const route = classifyCode(gray, w, h);
+  if (route.type === "wechat") {
+    badge.textContent = "微信小程序码不支持（圆形放射结构，无方形模块矩阵）";
+    return;
+  }
+  if (route.type !== "qr" || !route.grid) {
+    badge.textContent = "未识别为标准 QR（仅支持标准二维码图片）";
+    return;
+  }
+  const sampled = sampleModules(gray, w, h, route.grid);
+  const n = route.grid.n, quiet = 4, size = n + quiet * 2;
+  const matrix = [];
+  for (let r = 0; r < size; r++) {
+    const row = [];
+    for (let col = 0; col < size; col++) {
+      const mr = r - quiet, mc = col - quiet;
+      row.push(mr >= 0 && mr < n && mc >= 0 && mc < n && sampled[mr][mc]);
+    }
+    matrix.push(row);
+  }
+  cur = { size, m: matrix };
+  render();
+  badge.textContent = `已上传 ${n}×${n} QR（图片采样成树）`;
+}
+
+const fileInput = document.getElementById("file");
+document.getElementById("upload").addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    await processQRImage(file);
+  } catch (err) {
+    console.error("上传处理出错", err.stack || err);
+    badge.textContent = "上传处理出错：" + (err && err.message ? err.message : String(err));
+  }
+});
+
+// 调试/自测：?img=test-qr.png 直接加载项目内图片跑同一条管线（也用于无头验证）
+const debugImg = new URLSearchParams(location.search).get("img");
+if (debugImg) {
+  (async () => {
+    try {
+      const resp = await fetch(debugImg);
+      const blob = await resp.blob();
+      await processQRImage(blob);
+    } catch (err) {
+      console.error(err.stack || err);
+      badge.textContent = "调试加载出错：" + err.message;
+    }
+  })();
+}
+
+document.getElementById("flat").addEventListener("click", () => {
+  flat = !flat;
+  if (flat) {
+    tweenCam(FLAT_POS, FLAT_TGT, 700, () => {
+      // 相机完全转到正俯视（正方形）后，再淡入 2D 码
+      if (flat) document.getElementById("flat2d").classList.add("show");
+    });
+    controls.autoRotate = false;
+    spinBtn.textContent = "自动旋转：关";
+    drawFlat2d();
+    badge.textContent = "扁平视图（深色可扫）";
+  } else {
+    document.getElementById("flat2d").classList.remove("show");
+    tweenCam(ISO_POS, ISO_TGT);
+    badge.textContent = "3D 视图";
+  }
+});
+
+spinBtn.addEventListener("click", () => {
+  if (flat) {
+    flat = false;
+    document.getElementById("flat2d").classList.remove("show");
+    tweenCam(ISO_POS, ISO_TGT);
+    badge.textContent = "3D 视图";
+  }
+  controls.autoRotate = !controls.autoRotate;
+  spinBtn.textContent = "自动旋转：" + (controls.autoRotate ? "开" : "关");
+});
+
+// ---------- 渲染循环 ----------
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (anim) {
+    const t = easeInOutCubic(Math.min(1, (now - anim.start) / anim.dur));
+    camera.position.lerpVectors(anim.fromP, anim.toP, t);
+    controls.target.lerpVectors(anim.fromT, anim.toT, t);
+    if (t >= 1) { const done = anim.onDone; anim = null; if (done) done(); }
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+
+// ---------- resize ----------
+window.addEventListener("resize", () => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  if (flat) drawFlat2d();
+});
+
+// ---------- 初始 ----------
+rebuild();
+if (new URLSearchParams(location.search).get("flat")) {
+  // 深链：直接进扁平视图（也用于自动化截图验证）
+  flat = true;
+  document.getElementById("flat2d").classList.add("show");
+  drawFlat2d();
+  camera.position.copy(FLAT_POS);
+  controls.target.copy(FLAT_TGT);
+  controls.autoRotate = false;
+  spinBtn.textContent = "自动旋转：关";
+  badge.textContent = "扁平视图（深色可扫）";
+}
+</script>
+</body>
+</html>

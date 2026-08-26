@@ -52,3 +52,10 @@ AGENTS/SPEC/PLAN/TASKS/feature_list/progress/init.sh；npm test 链（33 测试�
 2. 每任务 Red→Green→Refactor，`npm test` 必须绿
 3. **Gate 验收**：每阶段完成跑 `./init.sh` + 真实图端到端
 4. 测试图素材：ui/test-qr.png（微信码）、/tmp/img6150.rgba（真实图调试）
+
+## 阶段 7：3D 樱花树 QR 独立模块 ✅（2026-08-26）
+
+- 独立入口 ui/qr3d.html（与增强工具两个入口，互不干扰）
+- 核心 src/qr3d/layout.js + flat.js（纯函数，TDD：8 测试）
+- 双输入：文本生成 / 上传方形码采样；扁平可扫彩色码（深色配色）
+- 微信圆形码 3D 浮雕验证后取消（无解码验证手段）

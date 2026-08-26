@@ -78,6 +78,16 @@
       ],
       "status": "done",
       "evidence": "T3.1-T3.5 完成：网格定位/采样/重绘(含logo)/管道+回退；真实微信码闸门通过（B引擎、扫码一致、logo保留）"
+    },
+    {
+      "id": "feat-009",
+      "name": "3D 樱花树 QR（独立模块）",
+      "description": "独立入口 ui/qr3d.html：文本生成 / 上传方形码采样 → 3D 樱花树（方块 1:1 对应模块）+ 扁平可扫彩色码。核心在 src/qr3d/（纯函数）",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "src/qr3d/layout.js + flat.js；test/qr3d.test.js 8 测试（区域分类/堆叠/扁平解码闭环）；全量 69/69；无头验证树渲染+扁平解码+上传采样"
     }
   ]
 }
