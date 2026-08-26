@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR 工具集</title>
+<style>
+  :root {
+    --paper: #f7f5ef; --surface: #fffefa; --ink: #17201f; --muted: #65706d;
+    --line: #d8dcd5; --radius: 12px;
+    --shadow: 0 10px 30px rgb(23 32 31 / .08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html, body { overflow-x: clip; }
+  body {
+    font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #fbfaf6 0%, var(--paper) 30rem);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { flex: 1; max-width: 1100px; margin: 0 auto; padding: 5rem 1.5rem 4.5rem; }
+  header { margin-bottom: 2.6rem; }
+  .eyebrow {
+    margin: 0 0 .6rem; color: var(--muted); font-size: 13px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+  }
+  h1 {
+    margin: 0 0 .5rem; font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 700;
+    line-height: 1.1; letter-spacing: -.02em; text-wrap: balance; overflow-wrap: anywhere;
+  }
+  .sub { margin: 0; color: var(--muted); font-size: 1.02rem; text-wrap: pretty; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6rem; }
+
+  .card {
+    --block: #176b5d; --block-dark: #0f5147; --block-soft: #dcece7;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 1.4rem;
+    box-shadow: var(--shadow); display: flex; flex-direction: column;
+  }
+  .card.deco-b { --block: #c25e7c; --block-dark: #a34a67; --block-soft: #f6e3ea; }
+  .tag {
+    margin: 0 0 .5rem; color: var(--block); font-size: 12.5px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .card h2 {
+    margin: 0 0 .45rem; font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em;
+    line-height: 1.2; text-wrap: balance; overflow-wrap: anywhere;
+  }
+  .desc { margin: 0 0 1rem; color: var(--muted); font-size: .95rem; line-height: 1.55; text-wrap: pretty; }
+  .btn {
+    margin-top: auto; display: inline-flex; align-items: center; justify-content: center;
+    gap: .5rem; padding: .72rem 1.1rem; border-radius: 12px; text-decoration: none;
+    font-weight: 650; font-size: .95rem; color: #fff;
+    background: var(--block); box-shadow: 0 8px 20px var(--block-soft);
+    transition: background 160ms ease, transform 160ms ease;
+  }
+  .btn:focus-visible { outline: 2px solid var(--block-dark); outline-offset: 2px; }
+  @media (hover: hover) {
+    .btn:hover { background: var(--block-dark); }
+  }
+  .btn:active { transform: translateY(1px); }
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition: none; }
+  }
+
+  .site-footer {
+    padding: 0 0 2rem; text-align: center; color: var(--muted); font-size: 14px;
+  }
+  .site-footer a {
+    display: inline-flex; align-items: center; gap: .55rem;
+    color: var(--muted); text-decoration: none; transition: color 160ms ease;
+  }
+  .site-footer a:hover { color: var(--ink); }
+  .site-footer svg { width: 22px; height: 22px; fill: currentColor; flex-shrink: 0; }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">QR Toolkit</p>
+    <h1>二维码工具集</h1>
+    <p class="sub">两个工具，一个入口——按需选用。</p>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <p class="tag">A · 增强</p>
+      <h2>QR 码增强工具</h2>
+      <p class="desc">低分辨率码 → 高清 PNG / SVG：标准码结构重绘、风格保留、闭环自检。</p>
+      <a class="btn" href="./index.html">进入增强工具 →</a>
+    </section>
+
+    <section class="card deco-b">
+      <p class="tag">B · 创作</p>
+      <h2>3D 樱花树 QR</h2>
+      <p class="desc">把二维码变成一棵可扫码的 3D 樱花树——方块即模块，形与二维码同构。</p>
+      <a class="btn" href="./qr3d.html">进入樱花树 →</a>
+    </section>
+  </div>
+
+</main>
+<footer class="site-footer">
+  <a href="https://github.com/haohaiHuang/qr-tool" target="_blank" rel="noopener" aria-label="GitHub 仓库">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+  </a>
+</footer>
+</body>
+</html>
