@@ -106,3 +106,9 @@
   - 微信圆形码（小程序码）不支持：无方形模块矩阵；且无开源解码器无法验证扫码（3D 浮雕方案取消）
   - 微信个人方形码 = 标准 QR，采样管道直接支持（修复 {size, m} 键名不一致 bug）
 - 测试：`test/qr3d.test.js` 8 个（区域分类/堆叠层数/浅色白底/扁平解码闭环）；全量 69/69 通过
+
+### UI 清理（2026-08-26）
+
+- 移除 `ui/qr3d.html` 3D 视图下方的 demo 说明卡：「这是什么」原理卡 + 「可扫码 2D 预览」卡，及其配套 `draw2d()` / `#q2d` 代码、`.side/.card/.note` CSS；`<title>` 去掉「— Demo」
+- 保留：`.hint` 操作提示、「扁平扫码视图」`#flat2d`（可扫码核心）、Three.js 树渲染逻辑
+- 环境注释：本机 `npm test` 因 `@zxing/library` 为 CommonJS、`src/qr/decode.js` 用命名导入，在 Node v23 下报 `ERR_MODULE_NOT_FOUND`（HEAD 未改动时同错）——项目开发机 Node 24 下全绿，属 Node 版本差异，与本次 UI 清理无关
