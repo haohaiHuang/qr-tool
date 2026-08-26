@@ -43,6 +43,9 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 button.primary:hover { background: var(--accent-dark); }
 .hint { color: var(--muted); font-size: 13px; margin-top: .5rem; }
 
+.mode-or { color: var(--muted); font-size: 15px; font-weight: 600; flex-shrink: 0; }
+.controls { display: flex; gap: .6rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; }
+
 .stage {
   margin-top: 1.4rem; border-radius: 14px; overflow: hidden; position: relative;
   border: 1px solid var(--line);
@@ -68,17 +71,21 @@ button.primary:hover { background: var(--accent-dark); }
 
   <div class="row">
     <input type="text" id="text" value="https://enzo.fyi" placeholder="输入任意文本 / URL" spellcheck="false">
+    <span class="mode-or">或</span>
     <button id="upload">上传 QR 图片</button>
-    <button id="flat">扁平扫码视图</button>
-    <button id="spin">自动旋转：开</button>
     <input type="file" id="file" accept="image/*" hidden>
   </div>
-  <p class="hint">输入文本实时生成 · 或上传已有标准 QR 图片采样成树 · 拖拽旋转 / 滚轮缩放 · 「扁平扫码视图」切换高对比彩色二维码（手机可扫）</p>
+  <p class="hint">拖拽旋转 / 滚轮缩放 · 点「扁平扫码视图」切换高对比彩色二维码（手机可扫）</p>
 
   <div class="stage">
     <canvas id="gl"></canvas>
     <canvas id="flat2d"></canvas>
     <div class="badge" id="badge">3D 视图</div>
+  </div>
+
+  <div class="controls">
+    <button id="flat" class="primary">扁平扫码视图</button>
+    <button id="spin">自动旋转：开</button>
   </div>
 </main>
 
@@ -148,8 +155,8 @@ function applyToMesh(blocks, palette, jitter = true) {
     mesh.setMatrixAt(i, dummy.matrix);
     color.setHex(palette[b.type]);
     if (jitter) { // 仅 3D：轻微随机亮度变化避免死板；扁平关闭以保证可扫
-      const v = 1 + (Math.sin((b.x * 7 + b.z * 13 + b.y * 5)) * 0.5 + 0.5 - 0.5) * 0.12;
-      color.multiplyScalar(Math.max(0.82, Math.min(1.18, v)));
+      const v = 1 + Math.sin(b.x * 7 + b.z * 13 + b.y * 5) * 0.06;
+      color.multiplyScalar(v);
     }
     mesh.setColorAt(i, color);
   }
