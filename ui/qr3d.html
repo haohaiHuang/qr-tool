@@ -198,7 +198,7 @@ function drawFlat2d() {
   const ctx = c.getContext("2d");
   ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, dw, dh);
   const qrPx = Math.max(1, Math.floor(Math.min(dw, dh) * 0.84 / cur.size));
-  const { rgba, width, height } = matrixToColoredRgba(cur, qrPx);
+  const { rgba, width, height } = matrixToColoredRgba(cur, qrPx, tree); // 配色跟随树种
   const ox = Math.round((dw - width) / 2), oy = Math.round((dh - height) / 2);
   ctx.putImageData(new ImageData(rgba, width, height), ox, oy);
 }
@@ -222,6 +222,7 @@ function rebuild() {
 
 const badge = document.getElementById("badge");
 const spinBtn = document.getElementById("spin");
+const flatBtn = document.getElementById("flat");
 
 document.getElementById("text").addEventListener("keydown", (e) => { if (e.key === "Enter") rebuild(); });
 // 实时：输入即重建（轻微防抖，避免每个键都跑一次全量重生成）
@@ -338,10 +339,12 @@ document.getElementById("flat").addEventListener("click", () => {
     spinBtn.textContent = "自动旋转：关";
     drawFlat2d();
     badge.textContent = "扁平视图（深色可扫）";
+    flatBtn.textContent = "3D 视图"; // 扁平时点它切回 3D
   } else {
     document.getElementById("flat2d").classList.remove("show");
     tweenCam(ISO_POS, ISO_TGT);
     badge.textContent = "3D 视图";
+    flatBtn.textContent = "扁平扫码视图";
   }
 });
 
@@ -351,6 +354,7 @@ spinBtn.addEventListener("click", () => {
     document.getElementById("flat2d").classList.remove("show");
     tweenCam(ISO_POS, ISO_TGT);
     badge.textContent = "3D 视图";
+    flatBtn.textContent = "扁平扫码视图";
   }
   controls.autoRotate = !controls.autoRotate;
   spinBtn.textContent = "自动旋转：" + (controls.autoRotate ? "开" : "关");
@@ -390,6 +394,7 @@ if (new URLSearchParams(location.search).get("flat")) {
   controls.autoRotate = false;
   spinBtn.textContent = "自动旋转：关";
   badge.textContent = "扁平视图（深色可扫）";
+  flatBtn.textContent = "3D 视图";
 }
 </script>
 </body>

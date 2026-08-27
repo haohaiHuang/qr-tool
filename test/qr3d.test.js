@@ -117,3 +117,20 @@ test("flat: 真实 QR 扁平彩色码可解码（闭环）", () => {
   const { rgba, width } = matrixToColoredRgba({ size, m: matrix }, 8);
   assert.equal(decodeQR(rgba, width, width), text);
 });
+
+test("flat: 扁平配色跟随树种（松树树冠应为深绿而非红）", () => {
+  const s = synth(21);
+  s.m[s.c][s.c + 5] = true; // 冠区深色模块
+  const { rgba, width } = matrixToColoredRgba({ size: s.size, m: s.m }, 2, TREE_TYPES.pine);
+  const qrPx = 2;
+  const i = (s.c * qrPx * width + (s.c + 5) * qrPx) * 4; // 模块 (row=s.c, col=s.c+5)
+  const [r, g, b] = [rgba[i], rgba[i + 1], rgba[i + 2]];
+  assert.ok(g > r && g > b, `松树扁平树冠应为深绿（实际 rgb(${r},${g},${b})）`);
+});
+
+test("flat: 松树配色扁平码仍可解码（闭环）", () => {
+  const text = "https://enzo.fyi";
+  const { size, matrix } = generateMatrix(text, 4, "M");
+  const { rgba, width } = matrixToColoredRgba({ size, m: matrix }, 8, TREE_TYPES.pine);
+  assert.equal(decodeQR(rgba, width, width), text);
+});
