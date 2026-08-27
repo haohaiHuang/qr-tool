@@ -80,7 +80,7 @@ test("layout: 松树圆锥覆盖中心且树干更高", () => {
   const cherry = pine.filter((b) => b.type === T.CHERRY);
   const trunk = pine.filter((b) => b.type === T.TRUNK);
   assert.ok(cherry.length > 0, "中心应被圆锥（松针）覆盖");
-  assert.ok(trunk.length >= 12, "松树应有强制中心树干（≥12 层）");
+  assert.ok(trunk.length >= 18, "松树应有强制中心高树干（≥18 层）");
 });
 
 test("layout: 浅色地面不受树种影响", () => {

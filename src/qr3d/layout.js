@@ -17,15 +17,15 @@ const P = { D: 0xf6ead0, T: 0x7a4a2b, G: 0x8cc469 }; // 公共：奶油地/棕�
 // 树种配置：name 显示名 / palette 3D 配色（奶油地/树冠/树干/草地）/ shape 树冠形状 / canopyFactor 冠幅倍率
 export const TREE_TYPES = {
   sakura: { name: "樱花", palette: [P.D, 0xf2a7c0, P.T, P.G], shape: "dome", canopyFactor: 1.0 },
-  pine:   { name: "松树", palette: [P.D, 0x2f7a3f, 0x6b4a2b, P.G], shape: "cone", canopyFactor: 0.85 },
+  pine:   { name: "松树", palette: [P.D, 0x2f7a3f, 0x6b4a2b, P.G], shape: "cone", canopyFactor: 0.7 },
 };
 
 // 按树形计算冠区堆叠层（t = 1-距中心/冠半径，中心 1 / 边缘 0），返回 [{ y: 层索引, s: 方块缩放 }]
 function canopyLayers(shape, t) {
   if (shape === "cone") {
-    // 松树：高圆锥——锥底中心高（露出树干）、边缘低（近地面），树冠高
-    const base = 2 + Math.round(6 * t);
-    const layers = Math.max(2, Math.round(18 * (0.1 + 0.9 * t)));
+    // 松树：高圆锥——锥底中心高（露高树干）、边缘低（近地面），树冠高而窄
+    const base = 12 + Math.round(8 * t); // 中心 20 / 边缘 12（锥体抬离地面，树干下方裸露）
+    const layers = Math.max(2, Math.round(14 * (0.1 + 0.9 * t)));
     return Array.from({ length: layers }, (_, i) => ({ y: base + i, s: 1 }));
   }
   // 樱花：圆顶——中心高边缘低（二次曲线 + 圆顶偏移）
@@ -63,10 +63,11 @@ export function buildBlocks({ size, m }, tree = TREE_TYPES.sakura) {
     for (const ly of layers)
       out.push({ x: (c - cx) * CELL, y: (ly.y + 0.5) * CELL, z: (r - cx) * CELL, type, s: ly.s });
   }
-  // 松树：中心强制树干（QR 中心模块可能是浅色 → 保证有可见的高树干）
+  // 松树：中心强制 3×3 高树干（不依赖 QR 中心深浅；锥体抬离地面 → 树干下方裸露可见）
   if (shape === "cone") {
-    for (let i = 0; i < 12; i++)
-      out.push({ x: 0, y: (i + 0.5) * CELL, z: 0, type: T.TRUNK, s: 1 });
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++)
+      for (let i = 0; i < 24; i++)
+        out.push({ x: dr * CELL, y: (i + 0.5) * CELL, z: dc * CELL, type: T.TRUNK, s: 1 });
   }
   return out;
 }
