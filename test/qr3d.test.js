@@ -29,7 +29,7 @@ test("layout: 中心深色模块 → TRUNK 堆叠 TRUNK_LAYERS 层", () => {
 
 test("layout: 冠区深色模块 → CHERRY 穹顶（≥2 层）", () => {
   const s = synth(21);
-  s.m[s.c][s.c + 5] = true; // 距离 5：在冠区（TRUNK_R=2.5 < 5 ≤ canopyR≈9.66）
+  s.m[s.c][s.c + 5] = true; // 距离 5：冠区（TRUNK_R=2.5 < 5 ≤ canopyR≈9.66）
   const blocks = buildBlocks({ size: s.size, m: s.m });
   const cherry = blocks.filter((b) => b.type === T.CHERRY);
   assert.ok(cherry.length >= 2, `期望 ≥2 层，实际 ${cherry.length}`);
@@ -49,71 +49,46 @@ test("layout: 每个模块至少 1 个方块", () => {
   assert.ok(blocks.length >= size * size);
 });
 
-test("TREE_TYPES: 5 个树种，树形与冠幅各异", () => {
-  assert.equal(Object.keys(TREE_TYPES).length, 5);
+test("TREE_TYPES: 樱花/松树两树种", () => {
+  assert.deepEqual(Object.keys(TREE_TYPES).sort(), ["pine", "sakura"]);
   for (const t of Object.values(TREE_TYPES)) {
     assert.ok(t.name);
     assert.equal(t.palette.length, 4);
-    assert.ok(["dome", "flat", "cone", "pagoda", "palm"].includes(t.shape), `${t.name} 树形应合法`);
-    assert.equal(typeof t.canopyFactor, "number");
+    assert.ok(["dome", "cone"].includes(t.shape));
   }
 });
 
-test("layout: 5 个树种树冠布局互不相同", () => {
+test("layout: 樱花（圆顶）与松树（圆锥）树冠布局不同", () => {
   const { size, matrix } = generateMatrix("SPECIES", 4, "M");
   const fp = (blocks) => {
     const cherry = blocks.filter((b) => b.type === T.CHERRY);
-    const xs = cherry.map((b) => b.x), ys = cherry.map((b) => b.y);
     return {
-      cherry: cherry.length, total: blocks.length,
-      minY: Math.min(...ys).toFixed(3), maxY: Math.max(...ys).toFixed(3),
-      span: (Math.max(...xs) - Math.min(...xs)).toFixed(3),
+      cherry: cherry.length,
+      minY: Math.min(...cherry.map((b) => b.y)).toFixed(3),
+      maxY: Math.max(...cherry.map((b) => b.y)).toFixed(3),
     };
   };
-  const fps = Object.values(TREE_TYPES).map((t) => JSON.stringify(fp(buildBlocks({ size, m: matrix }, t))));
-  assert.equal(new Set(fps).size, fps.length, "每个树种树冠指纹应互不相同");
+  const sakura = JSON.stringify(fp(buildBlocks({ size, m: matrix }, TREE_TYPES.sakura)));
+  const pine = JSON.stringify(fp(buildBlocks({ size, m: matrix }, TREE_TYPES.pine)));
+  assert.notEqual(sakura, pine, "圆顶与圆锥树冠应不同");
 });
 
-test("layout: 树形不同 → 冠区堆叠不同（cone vs dome）", () => {
-  const s = synth(21);
-  s.m[s.c][s.c + 5] = true; // 距离 5：冠区
-  const dome = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.sakura).filter((b) => b.type === T.CHERRY);
-  const cone = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.pine).filter((b) => b.type === T.CHERRY);
-  assert.notEqual(cone.length, dome.length, "圆锥与圆顶层数应不同");
-  const minY = (arr) => Math.min(...arr.map((b) => b.y));
-  assert.ok(minY(cone) < minY(dome), "圆锥底座更低（针叶从近地面开始）");
-});
-
-test("layout: 圆顶类树种（同树形）树干/地面不变", () => {
-  const s = synth(21);
-  s.m[s.c][s.c] = true;      // 树干
-  s.m[s.c][s.c + 10] = true; // 草地（冠外）
-  const count = (blocks, type) => blocks.filter((b) => b.type === type).length;
-  const sakura = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.sakura);
-  const maple = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.maple);
-  assert.equal(count(maple, T.TRUNK), count(sakura, T.TRUNK));
-  assert.equal(count(maple, T.DIRT), count(sakura, T.DIRT));
-});
-
-test("layout: 松树圆锥覆盖中心（树干只露底部）", () => {
+test("layout: 松树圆锥覆盖中心且树干更高", () => {
   const s = synth(21);
   s.m[s.c][s.c] = true; // 中心深色
   const pine = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.pine);
   const cherry = pine.filter((b) => b.type === T.CHERRY);
   const trunk = pine.filter((b) => b.type === T.TRUNK);
   assert.ok(cherry.length > 0, "中心应被圆锥（松针）覆盖");
-  assert.ok(trunk.length < TRUNK_LAYERS, `松树树干应矮于通用 ${TRUNK_LAYERS} 层（锥底露出），实际 ${trunk.length}`);
+  assert.ok(trunk.length >= 12, "松树应有强制中心树干（≥12 层）");
 });
 
-test("layout: 棕榈冠紧贴树干顶端且外层叶放大下垂", () => {
+test("layout: 浅色地面不受树种影响", () => {
   const s = synth(21);
-  s.m[s.c][s.c + 4] = true; // 冠区外层深色模块（窄冠内，t<0.55 → 下垂放大叶）
-  const palm = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.palm);
-  const cherry = palm.filter((b) => b.type === T.CHERRY);
-  assert.ok(cherry.length > 0);
-  const minY = Math.min(...cherry.map((b) => b.y));
-  assert.ok(minY >= 0, "冠层不应低于地面");
-  assert.ok(cherry.some((b) => (b.s || 1) > 1.2), "外层下垂叶应放大（大片叶）");
+  const count = (blocks, type) => blocks.filter((b) => b.type === type).length;
+  const sakura = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.sakura);
+  const pine = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.pine);
+  assert.equal(count(pine, T.DIRT), count(sakura, T.DIRT));
 });
 
 test("flat: 输出尺寸 = size×qrPx", () => {

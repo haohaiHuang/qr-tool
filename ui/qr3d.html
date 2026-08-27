@@ -42,6 +42,12 @@ button {
 button:hover { border-color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 button.primary:hover { background: var(--accent-dark); }
+select {
+  padding: .6rem 1.1rem; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font-size: 14px; cursor: pointer;
+  font-family: inherit;
+}
+select:hover { border-color: var(--accent); }
 
 .mode-or { color: var(--muted); font-size: 15px; font-weight: 600; flex-shrink: 0; }
 .controls { display: flex; gap: .6rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; }
@@ -58,6 +64,7 @@ button.primary:hover { background: var(--accent-dark); }
 #gl { display: block; touch-action: none; }
 #flat2d { display: block; opacity: 0; pointer-events: none; transition: opacity .35s ease; background: #fff; }
 #flat2d.show { opacity: 1; }
+#spin { position: absolute; right: 12px; bottom: 12px; z-index: 2; }
 .badge {
   position: absolute; top: 12px; left: 12px; font-size: 12px; font-weight: 600;
   padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / 70%);
@@ -69,7 +76,7 @@ button.primary:hover { background: var(--accent-dark); }
 <main>
   <p class="eyebrow">3D Sakura QR</p>
   <h1>3D 樱花树 QR</h1>
-  <p class="sub">选择树种（🌸樱花 / 🍁枫树 / 🌲松树 / 🍂银杏 / 🌴棕榈）· 拖拽旋转 / 滚轮缩放 · 点「扁平扫码视图」切换高对比彩色二维码（手机可扫）</p>
+  <p class="sub">选择树种（🌸樱花 / 🌲松树）· 拖拽旋转 / 滚轮缩放 · 点「扁平扫码视图」切换高对比彩色二维码（手机可扫）</p>
 
   <div class="row">
     <input type="text" id="text" value="https://enzo.fyi" placeholder="输入任意文本 / URL" spellcheck="false">
@@ -82,18 +89,15 @@ button.primary:hover { background: var(--accent-dark); }
     <canvas id="gl"></canvas>
     <canvas id="flat2d"></canvas>
     <div class="badge" id="badge">3D 视图</div>
+    <button id="spin">自动旋转：开</button>
   </div>
 
   <div class="controls">
     <select id="tree" title="树种">
       <option value="sakura">🌸 樱花</option>
-      <option value="maple">🍁 枫树</option>
       <option value="pine">🌲 松树</option>
-      <option value="ginkgo">🍂 银杏</option>
-      <option value="palm">🌴 棕榈</option>
     </select>
     <button id="flat" class="primary">扁平扫码视图</button>
-    <button id="spin">自动旋转：开</button>
   </div>
 </main>
 
