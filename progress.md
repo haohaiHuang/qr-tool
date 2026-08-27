@@ -2,13 +2,14 @@
 
 ## Current State
 
-**Last Updated:** 2026-08-17 17:00
-**Active Feature:** feat-001 项目骨架与验证链
+**Last Updated:** 2026-08-26
+**Active Feature:** feat-009 3D 樱花树 QR（多树种升级）
 
 ## Status
 
 ### What's Done
 
+- [x] 3D 樱花树 QR 多树种升级（2026-08-26）：`TREE_TYPES` 支持樱花（dome 圆顶）/ 松树（cone 圆锥覆盖整个冠区 + 中心 3×3 实心 24 层高树干）；树种形状差异化 + 扁平视图配色 = 所选树种 3D 配色加深到可扫；树种下拉框（樱花/松树）+ 深链 ?tree=pine + 自定义 chevron 箭头
 - [x] Harness 五件套：AGENTS.md / feature_list.json / progress.md / init.sh / session-handoff.md
 - [x] 规格文档：SPEC.md（可执行验收标准）/ PLAN.md（7 阶段）/ TASKS.md（TDD 粒度任务）
 - [x] package.json + node:test 验证链（`npm test` → `node --test`，零依赖）
