@@ -49,13 +49,29 @@ test("layout: 每个模块至少 1 个方块", () => {
   assert.ok(blocks.length >= size * size);
 });
 
-test("TREE_TYPES: 多树种，各有配色与树形", () => {
-  assert.ok(Object.keys(TREE_TYPES).length >= 4);
+test("TREE_TYPES: 5 个树种，树形与冠幅各异", () => {
+  assert.equal(Object.keys(TREE_TYPES).length, 5);
   for (const t of Object.values(TREE_TYPES)) {
     assert.ok(t.name);
     assert.equal(t.palette.length, 4);
-    assert.ok(["dome", "cone"].includes(t.shape));
+    assert.ok(["dome", "flat", "cone", "pagoda", "palm"].includes(t.shape), `${t.name} 树形应合法`);
+    assert.equal(typeof t.canopyFactor, "number");
   }
+});
+
+test("layout: 5 个树种树冠布局互不相同", () => {
+  const { size, matrix } = generateMatrix("SPECIES", 4, "M");
+  const fp = (blocks) => {
+    const cherry = blocks.filter((b) => b.type === T.CHERRY);
+    const xs = cherry.map((b) => b.x), ys = cherry.map((b) => b.y);
+    return {
+      cherry: cherry.length, total: blocks.length,
+      minY: Math.min(...ys).toFixed(3), maxY: Math.max(...ys).toFixed(3),
+      span: (Math.max(...xs) - Math.min(...xs)).toFixed(3),
+    };
+  };
+  const fps = Object.values(TREE_TYPES).map((t) => JSON.stringify(fp(buildBlocks({ size, m: matrix }, t))));
+  assert.equal(new Set(fps).size, fps.length, "每个树种树冠指纹应互不相同");
 });
 
 test("layout: 树形不同 → 冠区堆叠不同（cone vs dome）", () => {
