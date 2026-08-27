@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateMatrix } from "../src/qr/generate.js";
 import { decodeQR } from "../src/qr/decode.js";
-import { buildBlocks, T, TRUNK_LAYERS } from "../src/qr3d/layout.js";
+import { buildBlocks, T, TRUNK_LAYERS, TREE_TYPES } from "../src/qr3d/layout.js";
 import { matrixToColoredRgba } from "../src/qr3d/flat.js";
 
 // 合成矩阵：控制各区域模块
@@ -47,6 +47,37 @@ test("layout: 每个模块至少 1 个方块", () => {
   const { size, matrix } = generateMatrix("3D TREE", 4, "M");
   const blocks = buildBlocks({ size, m: matrix });
   assert.ok(blocks.length >= size * size);
+});
+
+test("TREE_TYPES: 多树种，各有配色与树形", () => {
+  assert.ok(Object.keys(TREE_TYPES).length >= 4);
+  for (const t of Object.values(TREE_TYPES)) {
+    assert.ok(t.name);
+    assert.equal(t.palette.length, 4);
+    assert.ok(["dome", "cone"].includes(t.shape));
+  }
+});
+
+test("layout: 树形不同 → 冠区堆叠不同（cone vs dome）", () => {
+  const s = synth(21);
+  s.m[s.c][s.c + 5] = true; // 距离 5：冠区
+  const dome = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.sakura).filter((b) => b.type === T.CHERRY);
+  const cone = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.pine).filter((b) => b.type === T.CHERRY);
+  assert.notEqual(cone.length, dome.length, "圆锥与圆顶层数应不同");
+  const minY = (arr) => Math.min(...arr.map((b) => b.y));
+  assert.ok(minY(cone) < minY(dome), "圆锥底座更低（针叶从近地面开始）");
+});
+
+test("layout: 树种只影响树冠，树干/草地/地面不变", () => {
+  const s = synth(21);
+  s.m[s.c][s.c] = true;      // 树干
+  s.m[s.c][s.c + 10] = true; // 草地（冠外）
+  const count = (blocks, type) => blocks.filter((b) => b.type === type).length;
+  const sakura = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.sakura);
+  const pine = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.pine);
+  for (const type of [T.TRUNK, T.GRASS, T.DIRT]) {
+    assert.equal(count(pine, type), count(sakura, type), `type ${type} 应一致`);
+  }
 });
 
 test("flat: 输出尺寸 = size×qrPx", () => {

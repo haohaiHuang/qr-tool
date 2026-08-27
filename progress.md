@@ -112,3 +112,11 @@
 - 移除 `ui/qr3d.html` 3D 视图下方的 demo 说明卡：「这是什么」原理卡 + 「可扫码 2D 预览」卡，及其配套 `draw2d()` / `#q2d` 代码、`.side/.card/.note` CSS；`<title>` 去掉「— Demo」
 - 保留：`.hint` 操作提示、「扁平扫码视图」`#flat2d`（可扫码核心）、Three.js 树渲染逻辑
 - 环境注释：本机 `npm test` 因 `@zxing/library` 为 CommonJS、`src/qr/decode.js` 用命名导入，在 Node v23 下报 `ERR_MODULE_NOT_FOUND`（HEAD 未改动时同错）——项目开发机 Node 24 下全绿，属 Node 版本差异，与本次 UI 清理无关
+
+## 树种拓展（2026-08-27）
+
+- 需求：3D 樱花树支持其他树种
+- src/qr3d/layout.js：新增 TREE_TYPES（樱花/枫树/松树/银杏：配色 + 树形 dome/cone），buildBlocks 按树形生成树冠（cone=圆锥，dome=圆顶）
+- ui/qr3d.html：新增树种下拉选择 + ?tree= 深链
+- 测试：+3（树种配置 / cone vs dome 堆叠差异 / 树种只影响树冠）；全量 72/72
+- 无头验证：4 树种截图——粉/橙/绿/黄树冠正确，松树为绿色圆锥形（与樱花圆顶区分明显）
