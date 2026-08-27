@@ -90,7 +90,7 @@ button.primary:hover { background: var(--accent-dark); }
       <option value="maple">🍁 枫树</option>
       <option value="pine">🌲 松树</option>
       <option value="ginkgo">🍂 银杏</option>
-      <option value="willow">🌴 棕榈</option>
+      <option value="palm">🌴 棕榈</option>
     </select>
     <button id="flat" class="primary">扁平扫码视图</button>
     <button id="spin">自动旋转：开</button>
@@ -155,7 +155,7 @@ function applyToMesh(blocks, palette, jitter = true) {
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
     dummy.position.set(b.x, b.y, b.z);
-    dummy.scale.setScalar(BLOCK);
+    dummy.scale.setScalar(BLOCK * (b.s || 1));
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     color.setHex(palette[b.type]);

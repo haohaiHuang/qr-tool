@@ -84,16 +84,36 @@ test("layout: 树形不同 → 冠区堆叠不同（cone vs dome）", () => {
   assert.ok(minY(cone) < minY(dome), "圆锥底座更低（针叶从近地面开始）");
 });
 
-test("layout: 树种只影响树冠，树干/草地/地面不变", () => {
+test("layout: 圆顶类树种（同树形）树干/地面不变", () => {
   const s = synth(21);
   s.m[s.c][s.c] = true;      // 树干
   s.m[s.c][s.c + 10] = true; // 草地（冠外）
   const count = (blocks, type) => blocks.filter((b) => b.type === type).length;
   const sakura = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.sakura);
+  const maple = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.maple);
+  assert.equal(count(maple, T.TRUNK), count(sakura, T.TRUNK));
+  assert.equal(count(maple, T.DIRT), count(sakura, T.DIRT));
+});
+
+test("layout: 松树圆锥覆盖中心（树干只露底部）", () => {
+  const s = synth(21);
+  s.m[s.c][s.c] = true; // 中心深色
   const pine = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.pine);
-  for (const type of [T.TRUNK, T.GRASS, T.DIRT]) {
-    assert.equal(count(pine, type), count(sakura, type), `type ${type} 应一致`);
-  }
+  const cherry = pine.filter((b) => b.type === T.CHERRY);
+  const trunk = pine.filter((b) => b.type === T.TRUNK);
+  assert.ok(cherry.length > 0, "中心应被圆锥（松针）覆盖");
+  assert.ok(trunk.length < TRUNK_LAYERS, `松树树干应矮于通用 ${TRUNK_LAYERS} 层（锥底露出），实际 ${trunk.length}`);
+});
+
+test("layout: 棕榈冠紧贴树干顶端且外层叶放大下垂", () => {
+  const s = synth(21);
+  s.m[s.c][s.c + 4] = true; // 冠区外层深色模块（窄冠内，t<0.55 → 下垂放大叶）
+  const palm = buildBlocks({ size: s.size, m: s.m }, TREE_TYPES.palm);
+  const cherry = palm.filter((b) => b.type === T.CHERRY);
+  assert.ok(cherry.length > 0);
+  const minY = Math.min(...cherry.map((b) => b.y));
+  assert.ok(minY >= 0, "冠层不应低于地面");
+  assert.ok(cherry.some((b) => (b.s || 1) > 1.2), "外层下垂叶应放大（大片叶）");
 });
 
 test("flat: 输出尺寸 = size×qrPx", () => {
