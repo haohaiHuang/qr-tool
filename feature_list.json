@@ -82,12 +82,12 @@
     {
       "id": "feat-009",
       "name": "3D 樱花树 QR（独立模块）",
-      "description": "独立入口 ui/qr3d.html：文本生成 / 上传方形码采样 → 3D 树（方块 1:1 对应模块）+ 扁平可扫彩色码。核心在 src/qr3d/（纯函数）；支持多树种 5 形状：圆顶/平顶伞/圆锥/高柱/棕榈"),
+      "description": "独立入口 ui/qr3d.html：文本生成 / 上传方形码采样 → 3D 树（方块 1:1 对应模块）+ 扁平可扫彩色码。核心在 src/qr3d/（纯函数）；支持多树种 5 形状：圆顶/平顶伞/圆锥/窄高柱/棕榈顶冠）",
       "dependencies": [
         "feat-002"
       ],
       "status": "done",
-      "evidence": "src/qr3d/layout.js + flat.js；test/qr3d.test.js 11 测试（区域分类/堆叠/树种/扁平解码闭环）；全量 72/72；无头验证树渲染+扁平解码+上传采样+4 树种配色"
+      "evidence": "src/qr3d/layout.js + flat.js；test/qr3d.test.js 12 测试（区域分类/堆叠/树种形状指纹/扁平解码闭环）；全量 73/73；无头验证树渲染+扁平解码+上传采样+5 树种形状"
     }
   ]
 }
