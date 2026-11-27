@@ -47,7 +47,7 @@
         "feat-004"
       ],
       "status": "done",
-      "evidence": "UI 接入 B 引擎（预览=下载 1184px，logo/间隙/配色保留，SVG 矢量下载）；用户确认完美"
+      "evidence": "UI 接入 B 引擎（预览=下载 1184px，logo/间隙/配色保留，SVG 矢量下载）；用户确认完美。2026-11-27：手机底部抖动修复（100svh + 触屏内滚）并加上返回导航"
     },
     {
       "id": "feat-006",
@@ -87,7 +87,7 @@
         "feat-002"
       ],
       "status": "done",
-      "evidence": "src/qr3d/layout.js + flat.js；test/qr3d.test.js 12 测试（区域分类/堆叠/树种形状指纹/扁平解码闭环）；全量 73/73；无头验证树渲染+扁平解码+上传采样+多树种形状"
+      "evidence": "src/qr3d/layout.js + flat.js；test/qr3d.test.js 12 测试（区域分类/堆叠/树种形状指纹/扁平解码闭环）；全量 75/75；无头验证树渲染+扁平解码+上传采样+多树种形状。2026-11-27：舞台改由 ResizeObserver 定尺寸，避免手机地址栏 resize 把底部抖起来；页顶返回工具集"
     }
   ]
 }

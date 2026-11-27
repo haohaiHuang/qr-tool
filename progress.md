@@ -2,8 +2,20 @@
 
 ## Current State
 
-**Last Updated:** 2026-08-26
-**Active Feature:** feat-009 3D 樱花树 QR（多树种升级）
+**Last Updated:** 2026-11-27
+**Active Feature:** UI 修复 — 手机底部抖动 + 返回导航
+
+## 手机底部抖动与返回导航（2026-11-27）
+
+- 症状：手机打开工具页时底部抖动。`ui/hub.html` 用 `min-height: 100vh`（大视口）把页脚撑到底，内容高度落在小视口和大视口之间时，地址栏显隐和这段多出来的滚动互相触发。背景只画在 `body` 上，回弹时会露出 `html` 的默认底色。`ui/qr3d.html` 监听 `window.resize`，地址栏动画会反复重设 WebGL 画布。
+- 修复（`ui/hub.html`、`ui/index.html`、`ui/qr3d.html`）：
+  - `viewport-fit=cover`，`html` 铺 `--paper`，`color-scheme: light`，`overscroll-behavior-y: none`
+  - 最小高度改为 `100svh`（不支持时回退 `-webkit-fill-available` / `100vh`），底部加上安全区
+  - 触屏（`hover: none` 且 `pointer: coarse`，且支持 `svh`）：文档锁在小视口，只让 `main` 滚动，地址栏不再被文档滚动带着收放
+  - `qr3d` 改为 `ResizeObserver` 跟随舞台尺寸，`setSize(..., false)` 不写 canvas 的 inline 宽高
+- 导航：hub「← 返回主页」→ `https://hhhbewater.xyz/`；index / qr3d「← 返回工具集」→ `./hub.html`，旁侧有「主页」
+- 验证：Node 24 下 `npm test` 75/75。Chrome 桌面 1280×800、iPhone 13、iPhone SE：无横向溢出；返回链接跳到 hub；扁平视图与树种切换正常；`window.resize` 不改变画布尺寸；手机上文档 `scrollY` 保持 0，超出的内容在 `main` 内滚动
+- 特性状态未改（feat-005 / feat-009 仍为 done）
 
 ## Status
 

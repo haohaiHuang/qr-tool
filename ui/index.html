@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f5ef">
+<meta name="color-scheme" content="light">
 <title>QR 码增强工具</title>
 <script type="importmap">
 {
@@ -21,15 +23,53 @@
   --shadow: 0 22px 60px rgb(34 50 45 / 10%);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  background: var(--paper);
+  color-scheme: light;
+  overscroll-behavior-y: none;
+}
 body {
   font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
+  /* 100vh 在手机上高于可见区域，短页面会在底部露出一条能滚动的缝，地址栏跟着抖。
+     小视口单位把背景铺满真正看得到的区域。 */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100svh;
   background:
     radial-gradient(circle at 10% 0%, rgb(23 107 93 / 9%), transparent 32rem),
     linear-gradient(180deg, #fbfaf6 0%, var(--paper) 32rem);
   line-height: 1.6; text-rendering: optimizeLegibility;
 }
-main { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+main {
+  max-width: 860px; margin: 0 auto;
+  padding:
+    calc(1.25rem + env(safe-area-inset-top, 0px))
+    calc(1.5rem + env(safe-area-inset-right, 0px))
+    calc(4rem + env(safe-area-inset-bottom, 0px))
+    calc(1.5rem + env(safe-area-inset-left, 0px));
+}
+.back-nav {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: .15rem .7rem; margin: 0 0 1rem;
+}
+.back-link, .back-home {
+  display: inline-flex; align-items: center;
+  color: var(--muted); text-decoration: none; line-height: 1;
+  border-radius: 8px; white-space: nowrap;
+}
+.back-link {
+  font-size: 13.5px; font-weight: 650; letter-spacing: .01em;
+  padding: .4rem .1rem .4rem 0;
+}
+.back-home { font-size: 12.5px; font-weight: 600; padding: .4rem .1rem; }
+.back-sep { width: 3px; height: 3px; border-radius: 50%; background: #c5cbc6; flex: none; }
+.back-link:focus-visible, .back-home:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px;
+}
+@media (hover: hover) {
+  .back-link:hover, .back-home:hover { color: var(--ink); }
+}
 h1 { margin: 0; font-size: clamp(32px, 4.5vw, 48px); font-weight: 780; line-height: 1.04; letter-spacing: -0.055em; }
 p.eyebrow { margin: 0 0 .5rem; color: var(--accent); font-size: 13px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
 p.sub { color: var(--muted); font-size: clamp(15px, 1.6vw, 18px); margin-top: .6rem; line-height: 1.75; }
@@ -61,10 +101,32 @@ button {
 button.primary { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 8px 18px rgb(23 107 93 / 22%); }
 button:hover { opacity: .9; }
 button:disabled { opacity: .5; cursor: not-allowed; }
+
+@supports (height: 100svh) {
+  @media (hover: none) and (pointer: coarse) {
+    html, body {
+      height: 100svh;
+      max-height: 100svh;
+      overflow: hidden;
+    }
+    body { min-height: 0; }
+    main {
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
 </style>
 </head>
 <body>
 <main>
+  <nav class="back-nav" aria-label="页面导航">
+    <a class="back-link" href="./hub.html">← 返回工具集</a>
+    <span class="back-sep" aria-hidden="true"></span>
+    <a class="back-home" href="https://hhhbewater.xyz/">主页</a>
+  </nav>
   <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2.5rem">
     <div style="display:inline-flex; align-items:center; gap:.7rem; font-weight:760; letter-spacing:-.03em">
       <div style="display:grid; width:34px; height:34px; place-items:center; color:#fff; border-radius:10px; background:var(--accent); box-shadow:0 8px 18px rgb(23 107 93 / 22%); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px">QR</div>
